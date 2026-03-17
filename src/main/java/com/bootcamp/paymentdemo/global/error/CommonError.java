@@ -8,8 +8,11 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum CommonError {
 
-    // -- 1000:  --
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,"S1001","서버 내부 오류가 발생하였습니다.");
+    // [ 1000: SERVER ]
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,"S1001","서버 내부 오류가 발생하였습니다."),
+
+    // [ 2000: CUSTOMER ]
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "C2001", "이미 존재하는 사용자 이메일입니다.");
 
     private final HttpStatus status;
     private final String errorCode;
