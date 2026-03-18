@@ -6,24 +6,31 @@ import com.bootcamp.paymentdemo.domain.point.repository.PointDetailRepository;
 import com.bootcamp.paymentdemo.domain.point.repository.PointHistoryRepository;
 import com.bootcamp.paymentdemo.domain.point.repository.PointTransactionRepository;
 import com.bootcamp.paymentdemo.domain.user.entity.UserEntity2;
+import com.bootcamp.paymentdemo.domain.user.entity.UserMembership;
+import com.bootcamp.paymentdemo.domain.user.repository.UserMembershipRepository;
 import com.bootcamp.paymentdemo.domain.user.repository.UserRepository2;
 import com.bootcamp.paymentdemo.global.error.CommonError;
 import com.bootcamp.paymentdemo.global.error.CommonException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class PointTransactionService {
 
     private final PointTransactionRepository pointTransactionRepository;
     private final PointDetailRepository pointDetailRepository;
     private final PointHistoryRepository pointHistoryRepository;
     private final UserRepository2 userRepository2;
+    private final UserMembershipRepository userMembershipRepository;
 
     // 메서드명 고민 필요 / 일단 팀 ERD 기반으로 설정
     public void recordPointHistory(Long userId, Long orderId, Long paymentId, PointType type, Integer points) {
@@ -68,7 +75,7 @@ public class PointTransactionService {
         return current - points;
     }
 
-    @Transactional // 데이터 변경이 일어나므로 쓰기 모드
+    @Transactional // 데이터 변경이 일어나므로 쓰기 모드, snapshot 메서드
     public void usePoints(Long userId, Long totalAmountToUse, String orderId) {
 
         // 1. [비관적 락] 유저 잔액(스냅샷)을 수정하기 위해 DB를 잠금
@@ -119,6 +126,29 @@ public class PointTransactionService {
         if (remainToDeduct > 0) {
             throw new IllegalStateException("포인트 계산 정합성 오류: 차감할 금액이 남았습니다.");
         }
+    }
+
+    @Transactional
+    public void earnPointAfterPayment(Long userId, Long paidAmount) {
+
+        // 1. 유저의 현재 멤버십 정보를 가져옴
+        UserMembership membership = userMembershipRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("멤버십 정보가 없는 유저입니다."));
+
+        // 2. Long 결제 금액을 BigDecimal로 변환
+        BigDecimal amount = BigDecimal.valueOf(paidAmount);
+
+        // 3. 적립률(Double)을 BigDecimal로 변환
+        BigDecimal rate = BigDecimal.valueOf((membership.getGradePolicy().getPointRate()));
+
+        // 4. 정밀 계산
+        // setScale(0, RoundingMode.HALF_UP) -> 소수점 첫째자리에서 반올림하여 정수로 만듦
+        BigDecimal earned = amount.multiply(rate).setScale(0, RoundingMode.HALF_UP);
+
+        Long earnedAmount = earned.longValue(); //db저장은 Long으로 사용
+
+        log.info("정밀 적립 결과: {}원 * {}% = {}포인트", paidAmount, rate.multiply(BigDecimal.valueOf(100)), earnedAmount);
+
     }
 
 
