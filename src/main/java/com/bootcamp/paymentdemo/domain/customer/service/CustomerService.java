@@ -32,7 +32,7 @@ public class CustomerService {
                 Customer.builder()
                         .name(request.name())
                         .email(request.email())
-                        .password(request.password())
+                        .password(passwordEncoder.encode(request.password()))
                         .phoneNumber(request.phoneNumber())
                         .grade(Grade.NORMAL)
                         .points(0)

@@ -28,7 +28,6 @@ public class JwtTokenProvider {
 
     @PostConstruct
     public void init() {
-        byte[] bytes = Base64.getDecoder().decode(secretKey);
         key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -79,6 +78,12 @@ public class JwtTokenProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    // JWT 토큰에서 이메일 추출
+    public String getEmail(String token) {
+        return getCustomerInfoFromToken(token)
+                .get("email", String.class);
     }
 
 }
