@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.domain.order.entity;
 
 
 import com.bootcamp.paymentdemo.domain.product.entity.Product;
+import com.bootcamp.paymentdemo.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name="order_items")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderItem {
+public class OrderItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

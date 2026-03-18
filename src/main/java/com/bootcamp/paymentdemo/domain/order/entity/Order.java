@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.domain.order.entity;
 
 
 import com.bootcamp.paymentdemo.domain.customer.entity.Customer;
+import com.bootcamp.paymentdemo.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name="orders")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Order {
+public class Order extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,7 +41,7 @@ public class Order {
         this.customer = customer;
         this.orderNumber = orderNumber;
         this.totalAmount=0;
-        this.status = OrderStatus.PAYMENT_PENDING;
+        this.status = OrderStatus.PENDING;
     }
     public void changeTotalAmount(Integer totalAmount) {
         this.totalAmount = totalAmount;
