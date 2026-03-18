@@ -44,7 +44,8 @@ public class OrderItem {
     private Integer quantity;
 
 
-    public OrderItem(Product product, Integer quantity) {
+    public OrderItem(Order order,Product product, Integer quantity) {
+       this.order=order;
         this.product = product;
         this.productName = product.getName();
         this.productPrice = product.getPrice();

@@ -3,6 +3,7 @@ package com.bootcamp.paymentdemo.domain.order.dto.Request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -19,6 +20,7 @@ public class CreateOrderRequest {
     @Getter
     @NoArgsConstructor
     public static class OrderItem {
+        @NotNull(message = "상품 ID는 필수입니다.")
         private Long productId;
         private Integer quantity;
     }

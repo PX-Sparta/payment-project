@@ -35,12 +35,14 @@ public class Order {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    public Order(String orderId, Customer customer, String orderNumber, Integer totalAmount, OrderStatus status) {
+    public Order(String orderId, Customer customer, String orderNumber) {
         this.orderId=orderId;
         this.customer = customer;
         this.orderNumber = orderNumber;
-        this.totalAmount = totalAmount;
-        this.status = status;
+        this.totalAmount=0;
+        this.status = OrderStatus.PAYMENT_PENDING;
     }
-
+    public void changeTotalAmount(Integer totalAmount) {
+        this.totalAmount = totalAmount;
+    }
 }
