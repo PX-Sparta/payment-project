@@ -8,6 +8,7 @@ import com.bootcamp.paymentdemo.domain.payment.entity.PaymentRetryTask;
 import com.bootcamp.paymentdemo.domain.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRetryTaskRepository;
+import com.bootcamp.paymentdemo.domain.refund.enums.CancelFlow;
 import com.bootcamp.paymentdemo.global.error.PortOneApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,11 @@ public class PaymentRetryService {
      */
     @Transactional
     public void enqueueCancelRetry(String paymentId, String idempotencyKey, String reason) {
+        enqueueCancelRetry(paymentId, idempotencyKey, reason, CancelFlow.COMPENSATION);
+    }
+
+    @Transactional
+    public void enqueueCancelRetry(String paymentId, String idempotencyKey, String reason, CancelFlow cancelFlow) {
         boolean alreadyExists = paymentRetryTaskRepository.existsByPaymentIdAndOperationAndStatusIn(
                 paymentId,
                 PaymentRetryOperation.CANCEL_PAYMENT,
@@ -62,8 +68,9 @@ public class PaymentRetryService {
         if (alreadyExists) {
             return;
         }
-        paymentRetryTaskRepository.save(PaymentRetryTask.cancelTask(paymentId, idempotencyKey, reason));
-        log.error("CANCEL 재시도 작업 등록 - paymentId={}, key={}, reason={}", paymentId, idempotencyKey, reason);
+        paymentRetryTaskRepository.save(PaymentRetryTask.cancelTask(paymentId, idempotencyKey, reason, cancelFlow));
+        log.error("CANCEL 재시도 작업 등록 - paymentId={}, key={}, reason={}, flow={}",
+                paymentId, idempotencyKey, reason, cancelFlow);
     }
 
     /**
@@ -97,13 +104,16 @@ public class PaymentRetryService {
         } catch (PortOneApiException e) {
             if (e.isRetryable()) {
                 task.scheduleRetry(e.getMessage());
+                handleRetryTaskFinalFailure(task);
             } else {
                 task.markFailedFinal(e.getMessage());
+                handleRetryTaskFinalFailure(task);
             }
             log.error("재시도 작업 처리 실패(포트원) - taskId={}, operation={}, paymentId={}, retryable={}, error={}",
                     task.getId(), task.getOperation(), task.getPaymentId(), e.isRetryable(), e.getMessage(), e);
         } catch (Exception e) {
             task.scheduleRetry(e.getMessage());
+            handleRetryTaskFinalFailure(task);
             log.error("재시도 작업 처리 실패 - taskId={}, operation={}, paymentId={}, error={}",
                     task.getId(), task.getOperation(), task.getPaymentId(), e.getMessage(), e);
         }
@@ -130,6 +140,7 @@ public class PaymentRetryService {
                 return;
             }
             task.scheduleRetry("결제 상태 미완료 status=" + info.getStatus());
+            handleRetryTaskFinalFailure(task);
             return;
         }
 
@@ -167,13 +178,18 @@ public class PaymentRetryService {
 
         String status = cancelResult.getStatus();
         if ("CANCELLED".equalsIgnoreCase(status) || "PARTIAL_CANCELLED".equalsIgnoreCase(status)) {
-            paymentLifecycleService.markRefundedAfterCancel(task.getPaymentId(), task.getCancelReason());
+            paymentLifecycleService.markRefundedAfterCancel(
+                    task.getPaymentId(),
+                    task.getCancelReason(),
+                    task.getCancelFlow()
+            );
             task.markSucceeded();
             log.info("CANCEL 재시도 성공 - paymentId={}, status={}", task.getPaymentId(), status);
             return;
         }
 
         task.scheduleRetry("취소 상태 미확정 status=" + status);
+        handleRetryTaskFinalFailure(task);
     }
 
     public void expirePayments() {
@@ -194,8 +210,31 @@ public class PaymentRetryService {
                 );
         for (Payment payment : payments) {
             if (!paymentIdsWithTask.contains(payment.getPaymentId())) {
+                // TODO: 주문에서 결제대기 -> 주문취소로 바꾸는 로직 들어갈곳
                 payment.expire();
             }
+        }
+    }
+
+    private void handleRetryTaskFinalFailure(PaymentRetryTask task) {
+        if (task.getStatus() != PaymentRetryStatus.FAILED) { // 테스크 재시도 실패인지확인
+            return;
+        }
+
+        if (task.getOperation() == PaymentRetryOperation.VERIFY_PAYMENT) { // 결제 재시도 실패확정 결제상태변경
+            paymentLifecycleService.markFailed(task.getPaymentId());
+            return;
+        }
+
+        if (task.getOperation() == PaymentRetryOperation.CANCEL_PAYMENT  // 환불 재시도 실패확정 환불상태변경
+                && task.getCancelFlow() == CancelFlow.REFUND) {
+            paymentLifecycleService.markRefundFailed(task.getPaymentId());
+            return;
+        }
+
+        if (task.getOperation() == PaymentRetryOperation.CANCEL_PAYMENT // 보상트랜젝션 재시도 실패확정 결제상태변경
+                && task.getCancelFlow() == CancelFlow.COMPENSATION) {
+            paymentLifecycleService.markFailed(task.getPaymentId());
         }
     }
 }

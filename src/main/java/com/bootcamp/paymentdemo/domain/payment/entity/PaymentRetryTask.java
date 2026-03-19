@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.domain.payment.entity;
 
 import com.bootcamp.paymentdemo.domain.payment.enums.PaymentRetryOperation;
 import com.bootcamp.paymentdemo.domain.payment.enums.PaymentRetryStatus;
+import com.bootcamp.paymentdemo.domain.refund.enums.CancelFlow;
 import com.bootcamp.paymentdemo.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -49,6 +50,10 @@ public class PaymentRetryTask extends BaseEntity {
     @Column(name = "cancel_reason")
     private String cancelReason; //취소사유
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "cancel_flow")
+    private CancelFlow cancelFlow; // 보상취소인지 일반환불인지
+
     @Column(name = "attempt_count", nullable = false)
     private int attemptCount;  // 몇번재시도했는지
 
@@ -81,13 +86,19 @@ public class PaymentRetryTask extends BaseEntity {
      * 결제 취소(보상 트랜잭션) 재시도 작업 생성
      * - 내부 처리 실패 후 PortOne 취소가 실패했을 때 큐에 넣는 작업
      */
-    public static PaymentRetryTask cancelTask(String paymentId, String idempotencyKey, String cancelReason) {
+    public static PaymentRetryTask cancelTask(
+            String paymentId,
+            String idempotencyKey,
+            String cancelReason,
+            CancelFlow cancelFlow
+    ) {
         PaymentRetryTask task = new PaymentRetryTask();
         task.paymentId = paymentId;
         task.operation = PaymentRetryOperation.CANCEL_PAYMENT;
         task.status = PaymentRetryStatus.PENDING;
         task.idempotencyKey = idempotencyKey;
         task.cancelReason = cancelReason;
+        task.cancelFlow = cancelFlow;
         task.attemptCount = 0;
         task.maxAttempts = 20;
         task.nextAttemptAt = LocalDateTime.now();

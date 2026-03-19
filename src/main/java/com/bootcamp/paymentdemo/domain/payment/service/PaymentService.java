@@ -7,6 +7,7 @@ import com.bootcamp.paymentdemo.domain.payment.dto.Request.PortOneWebhookRequest
 import com.bootcamp.paymentdemo.domain.payment.dto.Response.*;
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
+import com.bootcamp.paymentdemo.domain.refund.enums.CancelFlow;
 import com.bootcamp.paymentdemo.global.error.PortOneApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class PaymentService {
     private final PortOneApiClient portOneApiClient;
     private final PaymentRetryService paymentRetryService;
     private final PaymentLifecycleService paymentLifecycleService;
+    private final PaymentAccessValidator paymentAccessValidator;
 
     // 결제 ID 에 넣을 날짜 포맷
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
@@ -39,7 +41,7 @@ public class PaymentService {
      */
     @Transactional
     public PaymentCreateReadyResponse create(Authentication authentication, PaymentCreateReadyRequest request) {
-        validateAuthenticated(authentication);
+        paymentAccessValidator.validateAuthenticated(authentication); // 사용자확인
 
         if (request.totalAmount() == null || request.totalAmount() <= 0) {
             throw new IllegalArgumentException("결제 금액은 0보다 커야 합니다.");
@@ -48,10 +50,10 @@ public class PaymentService {
         Order order = orderRepository.findByOrderId(request.orderId()).orElseThrow(
                 () -> new IllegalArgumentException("없는 주문번호")
         );
-        validateOrderOwnership(authentication, order);
+        paymentAccessValidator.validateOrderOwnership(authentication, order); // 주문한유저가 맞는지확인
 
-        String paymentId = generatePaymentId();
-        Payment payment = Payment.of(order, request.totalAmount(), paymentId);
+        String paymentId = generatePaymentId();  // 결제고유ID 발급
+        Payment payment = Payment.of(order, request.totalAmount(), paymentId); // 페이먼트객체생성
         paymentRepository.save(payment);
 
         return PaymentCreateReadyResponse.checkoutReady(payment);
@@ -67,21 +69,20 @@ public class PaymentService {
      * 5) 결과를 컨트롤러 응답 DTO로 반환
      */
     public PaymentConfirmResponse confirm(Authentication authentication, String paymentId) {
-        validateAuthenticated(authentication);
-        Payment payment = paymentLifecycleService.getPayment(paymentId);
-        validatePaymentOwnership(authentication, payment);
+        Payment payment = paymentAccessValidator.getAuthorizedPayment(authentication, paymentId);
 
+        // 이미 성공한건 멱등처리
         if (payment.isAlreadyProcessed()) {
             log.info("멱등 처리 - 이미 처리된 결제입니다. paymentId={}, status={}",
                     paymentId, payment.getStatus());
             return PaymentConfirmResponse.alreadyProcessed(payment);
         }
 
-        PortOnePaymentInfoResponse portOnePayment;
-        String verifyIdempotencyKey = portOneApiClient.buildVerifyIdempotencyKey(paymentId);
+        PortOnePaymentInfoResponse portOnePayment; // 포트원조회에서 받을 바디
+        String verifyIdempotencyKey = portOneApiClient.buildVerifyIdempotencyKey(paymentId); //멱등키 발급
         try {
-            portOnePayment = portOneApiClient.getPaymentInfo(paymentId, verifyIdempotencyKey);
-        } catch (PortOneApiException apiException) {
+            portOnePayment = portOneApiClient.getPaymentInfo(paymentId, verifyIdempotencyKey); // 결제조회로직
+        } catch (PortOneApiException apiException) { // 결제조회 실패
             if (apiException.isRetryable()) {
                 paymentRetryService.enqueueVerifyRetry(paymentId, verifyIdempotencyKey);
                 return PaymentConfirmResponse.failed(
@@ -89,14 +90,14 @@ public class PaymentService {
                         "포트원 조회 일시 장애로 결제 확인 재시도를 등록했습니다. reason=" + apiException.getMessage()
                 );
             }
-            paymentLifecycleService.markFailed(paymentId);
+            paymentLifecycleService.markFailed(paymentId); //  결제조회실패 재시도필요없는이유
             return PaymentConfirmResponse.failed(
                     paymentLifecycleService.getPayment(paymentId),
                     "포트원 조회 실패(비재시도): " + apiException.getMessage()
             );
         }
 
-        if (!portOnePayment.isPaidStatus()) {
+        if (!portOnePayment.isPaidStatus()) { // 포트원의 결제상태가 PAID가 아닐때
             paymentLifecycleService.markFailed(paymentId);
             return PaymentConfirmResponse.failed(
                     paymentLifecycleService.getPayment(paymentId),
@@ -106,7 +107,8 @@ public class PaymentService {
         }
 
         try {
-            paymentLifecycleService.completeApprovedPayment(paymentId, portOnePayment);
+            paymentLifecycleService.completeApprovedPayment(paymentId, portOnePayment); // 결제확정후 로직
+            // 보상트랜젝션 진행해야하는경우
         } catch (Exception processingException) {
             String compensationMessage = paymentLifecycleService.compensateApprovedPayment(
                     paymentId,
@@ -121,6 +123,7 @@ public class PaymentService {
             );
         }
 
+        // 결제완료되었다는 리스폰 프론트로보낼것
         return PaymentConfirmResponse.success(paymentLifecycleService.getPayment(paymentId));
     }
 
@@ -196,11 +199,7 @@ public class PaymentService {
 
     // 주문조회시 보여줄 결제조회 단 프론트엔드 미구현으로 안씀
     public PaymentSummaryResponse getPaymentSummary(Authentication authentication, String paymentId) {
-        validateAuthenticated(authentication);
-        Payment payment = paymentRepository.findByPaymentId(paymentId).orElseThrow(
-                () -> new IllegalStateException("존재하지않는 paymentId입니다.")
-        );
-        validatePaymentOwnership(authentication, payment);
+        Payment payment = paymentAccessValidator.getAuthorizedPayment(authentication, paymentId);
         return PaymentSummaryResponse.from(payment);
     }
 
@@ -212,53 +211,10 @@ public class PaymentService {
      */
     @Transactional(readOnly = true)
     public PaymentDetailResponse getPaymentDetail(Authentication authentication, String paymentId) {
-        validateAuthenticated(authentication);
-        Payment payment = paymentRepository.findByPaymentId(paymentId).orElseThrow(
-                () -> new IllegalStateException("존재하지않는 paymentId입니다.")
-        );
-        validatePaymentOwnership(authentication, payment);
+        paymentAccessValidator.getAuthorizedPayment(authentication, paymentId);
 
         String idempotencyKey = portOneApiClient.buildVerifyIdempotencyKey(paymentId);
         PortOnePaymentInfoResponse info = portOneApiClient.getPaymentInfo(paymentId, idempotencyKey);
         return PaymentDetailResponse.from(info);
-    }
-
-    private void validateAuthenticated(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("인증된 사용자만 결제를 요청할 수 있습니다.");
-        }
-
-        Object principal = authentication.getPrincipal();
-        if ("anonymousUser".equals(principal)) {
-            throw new IllegalStateException("인증된 사용자만 결제를 요청할 수 있습니다.");
-        }
-    }
-
-    private void validateOrderOwnership(Authentication authentication, Order order) {
-        String authenticatedEmail = extractAuthenticatedEmail(authentication);
-        String orderOwnerEmail = order.getCustomer().getEmail();
-
-        if (orderOwnerEmail == null || !orderOwnerEmail.equals(authenticatedEmail)) {
-            throw new IllegalStateException("본인 주문에 대해서만 결제를 진행할 수 있습니다.");
-        }
-    }
-
-    private void validatePaymentOwnership(Authentication authentication, Payment payment) {
-        validateOrderOwnership(authentication, payment.getOrder());
-    }
-
-    private String extractAuthenticatedEmail(Authentication authentication) {
-        Object principal = authentication.getPrincipal();
-
-        if (principal instanceof String email && !email.isBlank()) {
-            return email;
-        }
-
-        String authenticationName = authentication.getName();
-        if (authenticationName != null && !authenticationName.isBlank()) {
-            return authenticationName;
-        }
-
-        throw new IllegalStateException("인증 사용자 이메일을 확인할 수 없습니다.");
     }
 }

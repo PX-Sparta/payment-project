@@ -88,7 +88,14 @@ public class Payment extends BaseEntity {
         }
 
         public boolean isAlreadyProcessed() {
-                return this.status == PaymentStatus.PAID || this.status == PaymentStatus.FAILED ||  this.status == PaymentStatus.REFUNDED;
+                return this.status == PaymentStatus.PAID ||
+                        this.status == PaymentStatus.FAILED ||
+                        this.status == PaymentStatus.REFUNDED ||
+                        this.status == PaymentStatus.EXPIRED;
+        }
+
+        public boolean isRefunded() {
+                return this.status == PaymentStatus.REFUNDED;
         }
 
 

@@ -10,6 +10,7 @@ import com.bootcamp.paymentdemo.domain.payment.enums.PaymentStatus;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRepository;
 import com.bootcamp.paymentdemo.domain.payment.repository.PaymentRetryTaskRepository;
 import com.bootcamp.paymentdemo.domain.refund.entity.Refund;
+import com.bootcamp.paymentdemo.domain.refund.enums.CancelFlow;
 import com.bootcamp.paymentdemo.domain.refund.repository.RefundRepository;
 import com.bootcamp.paymentdemo.global.error.PortOneApiException;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class PaymentLifecycleService {
     private final PortOneProperties portOneProperties;
     private final PaymentRetryTaskRepository paymentRetryTaskRepository;
 
+    // 페미언트 객제조회(락 x)
     @Transactional(readOnly = true)
     public Payment getPayment(String paymentId) {
         return paymentRepository.findByPaymentId(paymentId).orElseThrow(
@@ -38,7 +40,8 @@ public class PaymentLifecycleService {
         );
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    //페이먼트 객체조회(락 o)
+    @Transactional(propagation = Propagation.REQUIRES_NEW) // 새로운트랜잭션
     public void markFailed(String paymentId) {
         Payment payment = paymentRepository.findWithLockByPaymentId(paymentId).orElseThrow(
                 () -> new IllegalArgumentException("결제 시도 내역이 없습니다. paymentId=" + paymentId)
@@ -49,6 +52,7 @@ public class PaymentLifecycleService {
         }
     }
 
+    // 포트원결제금액과 DB결제금액 검증 상점ID검증
     public void validateApprovedPayment(Payment payment, PortOnePaymentInfoResponse portOnePayment) {
         Long paidAmount = portOnePayment.resolveTotalAmount();
         if (paidAmount == null || !paidAmount.equals(payment.getAmount())) {
@@ -66,17 +70,18 @@ public class PaymentLifecycleService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    //결제완료 로직
+    @Transactional(propagation = Propagation.REQUIRES_NEW) // 새로운트랜젝션
     public Payment completeApprovedPayment(String paymentId, PortOnePaymentInfoResponse portOnePayment) {
         Payment payment = paymentRepository.findWithLockByPaymentId(paymentId).orElseThrow(
                 () -> new IllegalArgumentException("결제 시도 내역이 없습니다. paymentId=" + paymentId)
         );
 
-        if (payment.isAlreadyProcessed()) {
+        if (payment.isAlreadyProcessed()) { // 이미처리된건이면 그냥돌려보내
             return payment;
         }
 
-        validateApprovedPayment(payment, portOnePayment);
+        validateApprovedPayment(payment, portOnePayment);  // 포트원결제금액과 DB결제금액 검증 상점ID검증
 
         // TODO: 주문 도메인 팀 구현 필요
         // - 입력값: payment.getOrder().getId() 또는 payment.getOrder().getOrderId()
@@ -131,78 +136,90 @@ public class PaymentLifecycleService {
         return payment;
     }
 
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public String compensateApprovedPayment(String paymentId, String reason) {
+        return cancelApprovedPayment(paymentId, reason, CancelFlow.COMPENSATION);
+    }
+
+    // 결제취소, 보상트랜젝션 로직
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public String cancelApprovedPayment(String paymentId, String reason, CancelFlow cancelFlow) {
         Payment payment = paymentRepository.findWithLockByPaymentId(paymentId).orElseThrow(
                 () -> new IllegalArgumentException("결제 시도 내역이 없습니다. paymentId=" + paymentId)
         );
+        String cancelIdempotencyKey = portOneApiClient.buildCancelIdempotencyKey(paymentId); // 멱등키 생성
 
-        String cancelIdempotencyKey = portOneApiClient.buildCancelIdempotencyKey(paymentId);
         try {
-            PortOnePaymentInfoResponse cancelResult = portOneApiClient.paymentCancel(
+            PortOnePaymentInfoResponse cancelResult = portOneApiClient.paymentCancel( // 포트원 결제취소
                     paymentId,
                     reason,
                     cancelIdempotencyKey
             );
 
             String cancelStatus = cancelResult.getStatus();
-            if (isCancelledStatus(cancelStatus)) {
-                payment.refund();
-                upsertRefund(payment, reason);
+            if (isCancelledStatus(cancelStatus)) { // 취소 성공
+                payment.refund();  // 페이먼트 상태변경
 
-                // TODO: 주문 도메인 팀 구현 필요
-                // - 입력값: payment.getOrder().getId()
-                // - 책임: 환불/취소 성공 후 주문 상태를 CANCELLED(또는 환불 상태)로 변경
-                // - 규칙:
-                //   1) 이미 취소된 주문이면 멱등 처리
-                //   2) 취소 불가 상태 정책이 있으면 예외 전파
-                // orderService.cancelOrder(payment.getOrder().getId());
+                if (cancelFlow == CancelFlow.COMPENSATION) {
+                    upsertRefundForCompensation(payment, reason);
+                    return "보상 취소 성공. cancelStatus=" + cancelStatus;
+                }
 
-                // TODO: 상품/재고 도메인 팀 구현 필요
-                // - 입력값: payment.getOrder().getId()
-                // - 책임: 이 주문 때문에 차감했던 재고를 다시 복구
-                // - 규칙:
-                //   1) 주문상품 목록 기준으로 각 상품 재고 복구
-                //   2) 중복 복구가 일어나지 않도록 멱등 처리 필요
-                // inventoryService.restoreStockByOrder(payment.getOrder().getId());
-
-                // TODO: 포인트 도메인 팀 구현 필요
-                // - 입력값: payment.getOrder().getOrderId() 또는 order PK
-                // - 책임:
-                //   1) 사용 포인트가 있었다면 환원
-                //   2) 이미 적립된 포인트가 있었다면 회수 또는 무효화
-                // - 규칙:
-                //   1) 중복 환원/중복 회수가 발생하지 않도록 멱등 처리
-                //   2) 포인트 스냅샷과 이력을 함께 맞춰야 함
-                // pointTransactionService.refundUsedPoints(payment.getOrder().getOrderId());
-
-                return "보상 취소 성공. cancelStatus=" + cancelStatus;
+                markExistingRefundRefunded(payment);
+                return "환불 성공. cancelStatus=" + cancelStatus;
             }
 
-            payment.fail();
-            return "보상 취소 응답 확인 필요. cancelStatus=" + cancelStatus;
-        } catch (PortOneApiException cancelException) {
-            enqueueCancelRetry(paymentId, cancelIdempotencyKey, reason);
-            payment.fail();
-            log.error("보상 취소 실패 - paymentId={}, retryable={}, message={}",
+            enqueueCancelRetry(paymentId, cancelIdempotencyKey, reason, cancelFlow); // 취소 실패 호출은성공
+
+            if (cancelFlow == CancelFlow.COMPENSATION) {
+                return "보상 취소 응답 확인 필요(재시도 등록). cancelStatus=" + cancelStatus;
+            }
+
+            markExistingRefundRetrying(payment);
+            return "환불 처리 미확정(재시도 등록). cancelStatus=" + cancelStatus;
+        } catch (PortOneApiException cancelException) {  // 호출 자체가 실패
+            enqueueCancelRetry(paymentId, cancelIdempotencyKey, reason, cancelFlow);
+
+            if (cancelFlow == CancelFlow.COMPENSATION) {
+                log.error("보상 취소 실패 - paymentId={}, retryable={}, message={}",
+                        paymentId, cancelException.isRetryable(), cancelException.getMessage(), cancelException);
+                return "보상 취소 실패(재시도 등록): " + cancelException.getMessage();
+            }
+
+            markExistingRefundRetrying(payment);
+            log.error("환불 실패 - paymentId={}, retryable={}, message={}",
                     paymentId, cancelException.isRetryable(), cancelException.getMessage(), cancelException);
-            return "보상 취소 실패(재시도 등록): " + cancelException.getMessage();
-        } catch (Exception cancelException) {
-            enqueueCancelRetry(paymentId, cancelIdempotencyKey, reason);
-            payment.fail();
-            log.error("보상 취소 실패(기타) - paymentId={}, message={}", paymentId, cancelException.getMessage(), cancelException);
-            return "보상 취소 실패(재시도 등록): " + cancelException.getMessage();
+            return "환불 실패(재시도 등록): " + cancelException.getMessage();
+        } catch (Exception cancelException) {  // 그외 이유로 실패
+            enqueueCancelRetry(paymentId, cancelIdempotencyKey, reason, cancelFlow);
+
+            if (cancelFlow == CancelFlow.COMPENSATION) {
+                log.error("보상 취소 실패(기타) - paymentId={}, message={}",
+                        paymentId, cancelException.getMessage(), cancelException);
+                return "보상 취소 실패(재시도 등록): " + cancelException.getMessage();
+            }
+
+            markExistingRefundRetrying(payment);
+            log.error("환불 실패(기타) - paymentId={}, message={}",
+                    paymentId, cancelException.getMessage(), cancelException);
+            return "환불 실패(재시도 등록): " + cancelException.getMessage();
         }
     }
 
+    // 결제취소, 보상트랜젝션 재시도 로직
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markRefundedAfterCancel(String paymentId, String reason) {
+    public void markRefundedAfterCancel(String paymentId, String reason, CancelFlow cancelFlow) {
         Payment payment = paymentRepository.findWithLockByPaymentId(paymentId).orElseThrow(
                 () -> new IllegalArgumentException("결제 시도 내역이 없습니다. paymentId=" + paymentId)
         );
 
         payment.refund();
-        upsertRefund(payment, reason);
+        if (cancelFlow == CancelFlow.REFUND) {
+            markExistingRefundRefunded(payment);
+        } else {
+            upsertRefundForCompensation(payment, reason);
+        }
 
         // TODO: 주문 도메인 팀 구현 필요
         // - 재시도 큐를 통해 취소가 늦게 성공한 경우에도 주문 상태를 최종 취소 상태로 맞춰야 함
@@ -220,22 +237,47 @@ public class PaymentLifecycleService {
         // pointTransactionService.refundUsedPoints(payment.getOrder().getOrderId());
     }
 
-    private void upsertRefund(Payment payment, String reason) {
+    // 보상트랜젝션에서 결제취소 성공
+    private void upsertRefundForCompensation(Payment payment, String reason) {
         refundRepository.findByPayment(payment)
                 .ifPresentOrElse(
-                        refund -> refund.updateStatus(PaymentStatus.REFUNDED, reason),
-                        () -> refundRepository.save(Refund.create(payment, payment.getAmount(), reason, PaymentStatus.REFUNDED))
+                        Refund::markRefunded,
+                        () -> refundRepository.save(Refund.createRefunded(payment, payment.getAmount(), reason))
                 );
     }
-
+    // 환불성공 상태변경
+    private void markExistingRefundRefunded(Payment payment) {
+        Refund refund = refundRepository.findByPayment(payment).orElseThrow(
+                () -> new IllegalStateException("환불 요청 레코드가 없습니다. paymentId=" + payment.getPaymentId())
+        );
+        refund.markRefunded();
+    }
+    // 환불실패 상태변경
+    private void markExistingRefundRetrying(Payment payment) {
+        Refund refund = refundRepository.findByPayment(payment).orElseThrow(
+                () -> new IllegalStateException("환불 요청 레코드가 없습니다. paymentId=" + payment.getPaymentId())
+        );
+        refund.markRetrying();
+    }
+    // 환불, 결제취소 검증
     private boolean isCancelledStatus(String status) {
         if (status == null) {
             return false;
         }
         return "CANCELLED".equalsIgnoreCase(status) || "PARTIAL_CANCELLED".equalsIgnoreCase(status);
     }
-
-    private void enqueueCancelRetry(String paymentId, String idempotencyKey, String reason) {
+    // 환불 재시도후 최종실패
+    public void markRefundFailed(String paymentId) {
+        Payment payment = paymentRepository.findWithLockByPaymentId(paymentId).orElseThrow(
+                () -> new IllegalArgumentException("결제 시도 내역이 없습니다. paymentId=" + paymentId)
+        );
+        Refund refund = refundRepository.findByPayment(payment).orElseThrow(
+                () -> new IllegalStateException("환불 요청 레코드가 없습니다. paymentId=" + paymentId)
+        );
+        refund.markFailed();
+    }
+    // 취소 재시도 큐등록
+    private void enqueueCancelRetry(String paymentId, String idempotencyKey, String reason, CancelFlow cancelFlow) {
         boolean alreadyExists = paymentRetryTaskRepository.existsByPaymentIdAndOperationAndStatusIn(
                 paymentId,
                 PaymentRetryOperation.CANCEL_PAYMENT,
@@ -244,6 +286,6 @@ public class PaymentLifecycleService {
         if (alreadyExists) {
             return;
         }
-        paymentRetryTaskRepository.save(PaymentRetryTask.cancelTask(paymentId, idempotencyKey, reason));
+        paymentRetryTaskRepository.save(PaymentRetryTask.cancelTask(paymentId, idempotencyKey, reason, cancelFlow));
     }
 }
