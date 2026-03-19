@@ -1,5 +1,7 @@
 package com.bootcamp.paymentdemo.domain.payment.dto.Response;
 
+import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
+
 /**
  * 결제 확정 API 응답 DTO
  *
@@ -16,15 +18,33 @@ public record PaymentConfirmResponse(
         String paymentId,
         String message
 ) {
-    public static PaymentConfirmResponse success(Long orderId, String paymentId, String status) {
-        return new PaymentConfirmResponse(true, orderId, status, paymentId, "결제 확정 성공");
+    public static PaymentConfirmResponse success(Payment payment) {
+        return new PaymentConfirmResponse(
+                true,
+                payment.getOrder().getId(),
+                payment.getStatus().name(),
+                payment.getPaymentId(),
+                "결제 확정 성공"
+        );
     }
 
-    public static PaymentConfirmResponse alreadyProcessed(Long orderId, String paymentId, String status) {
-        return new PaymentConfirmResponse(true, orderId, status, paymentId, "이미 처리된 결제입니다.");
+    public static PaymentConfirmResponse alreadyProcessed(Payment payment) {
+        return new PaymentConfirmResponse(
+                true,
+                payment.getOrder().getId(),
+                payment.getStatus().name(),
+                payment.getPaymentId(),
+                "이미 처리된 결제입니다."
+        );
     }
 
-    public static PaymentConfirmResponse failed(Long orderId, String paymentId, String status, String message) {
-        return new PaymentConfirmResponse(false, orderId, status, paymentId, message);
+    public static PaymentConfirmResponse failed(Payment payment, String message) {
+        return new PaymentConfirmResponse(
+                false,
+                payment.getOrder().getId(),
+                payment.getStatus().name(),
+                payment.getPaymentId(),
+                message
+        );
     }
 }

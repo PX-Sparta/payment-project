@@ -47,6 +47,9 @@ public class Payment extends BaseEntity {
 
         @Column
         private LocalDateTime paidAt;
+
+        @Column
+        private LocalDateTime expiresAt; // 결제창 그냥닫은경우 주문취소로 바꾸는용도
         @Column
         private LocalDateTime refundedAt;
 
@@ -58,6 +61,7 @@ public class Payment extends BaseEntity {
                 payment.amount = totalAmount;
                 payment.paymentId = paymentId;
                 payment.status = PaymentStatus.READY;
+                payment.expiresAt= LocalDateTime.now().plusMinutes(10);
                 return payment;
         }
 
@@ -88,4 +92,7 @@ public class Payment extends BaseEntity {
         }
 
 
+        public void expire() {
+                this.status = PaymentStatus.EXPIRED;
+        }
 }

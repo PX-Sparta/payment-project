@@ -1,10 +1,13 @@
 package com.bootcamp.paymentdemo.domain.payment.repository;
 
 import com.bootcamp.paymentdemo.domain.payment.entity.Payment;
+import com.bootcamp.paymentdemo.domain.payment.enums.PaymentStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -17,4 +20,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Payment> findWithLockByPaymentId(String paymentId);
+
+
+    List<Payment> findByStatusAndExpiresAtLessThanEqual(
+            PaymentStatus status,
+            LocalDateTime now
+    );
+
 }

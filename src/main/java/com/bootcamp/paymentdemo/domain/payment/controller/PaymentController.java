@@ -4,6 +4,7 @@ import com.bootcamp.paymentdemo.domain.payment.dto.Request.PaymentCreateReadyReq
 import com.bootcamp.paymentdemo.domain.payment.dto.Request.PortOneWebhookRequest;
 import com.bootcamp.paymentdemo.domain.payment.dto.Response.PaymentConfirmResponse;
 import com.bootcamp.paymentdemo.domain.payment.dto.Response.PaymentCreateReadyResponse;
+import com.bootcamp.paymentdemo.domain.payment.dto.Response.PaymentDetailResponse;
 import com.bootcamp.paymentdemo.domain.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
 
     private final PaymentService paymentService;
+
+    // 현재 프론트엔드엔 어디에서도 결제조회를 하지않기때문에 서비스는 구현해놨지만 사용하진않음
 
     /**
      * 포트원 결제 결과 웹훅 수신 엔드포인트
@@ -63,8 +66,20 @@ public class PaymentController {
      * 여기서는 paymentId만 받아서 Service의 "진짜 검증 로직"으로 넘기는 게 핵심입니다.
      */
     @PostMapping("/v1/payments/{paymentId}/confirm")
-    public ResponseEntity<PaymentConfirmResponse> confirm(@PathVariable String paymentId) {
-        PaymentConfirmResponse response = paymentService.confirm(paymentId);
+    public ResponseEntity<PaymentConfirmResponse> confirm(
+            Authentication authentication,
+            @PathVariable String paymentId
+    ) {
+        PaymentConfirmResponse response = paymentService.confirm(authentication, paymentId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/v1/payments/{paymentId}")
+    public ResponseEntity<PaymentDetailResponse> paymentDetail(
+            Authentication authentication,
+            @PathVariable String paymentId
+    ) {
+        PaymentDetailResponse response = paymentService.getPaymentDetail(authentication, paymentId);
         return ResponseEntity.ok(response);
     }
 

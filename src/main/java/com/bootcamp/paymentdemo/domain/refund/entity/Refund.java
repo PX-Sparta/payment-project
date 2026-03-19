@@ -46,6 +46,22 @@ public class Refund extends BaseEntity {
         @Column(nullable = false)
         private LocalDateTime processedAt;
 
+        public static Refund create(Payment payment, Long refundAmount, String reason, PaymentStatus status) {
+                Refund refund = new Refund();
+                refund.payment = payment;
+                refund.refundAmount = refundAmount;
+                refund.reason = reason;
+                refund.status = status;
+                refund.processedAt = LocalDateTime.now();
+                return refund;
+        }
+
+        public void updateStatus(PaymentStatus status, String reason) {
+                this.status = status;
+                this.reason = reason;
+                this.processedAt = LocalDateTime.now();
+        }
+
 
 
 

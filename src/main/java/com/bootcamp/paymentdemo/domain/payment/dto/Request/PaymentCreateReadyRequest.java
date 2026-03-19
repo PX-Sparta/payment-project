@@ -1,7 +1,8 @@
 package com.bootcamp.paymentdemo.domain.payment.dto.Request;
 
 public record PaymentCreateReadyRequest(
-        Long orderId,
-        Long totalAmount
+        String orderId,
+        Long totalAmount,
+        Long pointsToUse
 ) {
 }

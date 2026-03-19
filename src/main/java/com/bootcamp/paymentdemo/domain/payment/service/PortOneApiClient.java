@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.domain.payment.service;
 
 import com.bootcamp.paymentdemo.config.PortOneProperties;
 import com.bootcamp.paymentdemo.domain.payment.dto.Response.PortOnePaymentInfoResponse;
+import com.bootcamp.paymentdemo.global.error.PortOneApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -9,8 +10,12 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClientResponseException;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -37,12 +42,15 @@ public class PortOneApiClient {
      * @return PortOnePaymentInfoResponse (상태, 금액, 상점ID 등 검증용 정보)
      */
     public PortOnePaymentInfoResponse getPaymentInfo(String paymentId) {
+        return getPaymentInfo(paymentId, buildVerifyIdempotencyKey(paymentId));
+    }
+
+    public PortOnePaymentInfoResponse getPaymentInfo(String paymentId, String idempotencyKey) {
         String url = portOneProperties.getApi().getBaseUrl() + "/payments/" + paymentId;
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "PortOne " + portOneProperties.getApi().getSecret());
-        // 외부 API 호출에도 멱등 키를 넣어두면 재시도 상황에서 안전합니다.
-        headers.set("Idempotency-Key", "\"" + UUID.randomUUID() + "\"");
+        headers.set("Idempotency-Key", quoteIdempotencyKey(idempotencyKey));
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
@@ -63,11 +71,84 @@ public class PortOneApiClient {
                     paymentId, body.getStatus(), body.resolveTotalAmount());
             return body;
 
+        } catch (ResourceAccessException e) {
+            // 네트워크 단절/타임아웃 계열: 재시도 대상
+            log.error("포트원 결제 단건조회 네트워크 오류 - paymentId={}, message={}", paymentId, e.getMessage(), e);
+            throw new PortOneApiException("포트원 결제 조회 네트워크 오류", true);
+        } catch (RestClientResponseException e) {
+            int statusCode = e.getStatusCode().value();
+            log.error("포트원 결제 단건조회 HTTP 오류 - paymentId={}, status={}, body={}",
+                    paymentId, statusCode, e.getResponseBodyAsString(), e);
+            boolean retryable = statusCode >= 500 || statusCode == 429;
+            throw new PortOneApiException("포트원 결제 조회 HTTP 오류(" + statusCode + ")", retryable);
+        } catch (PortOneApiException e) {
+            throw e;
         } catch (Exception e) {
             log.error("포트원 결제 단건조회 실패 - paymentId={}, message={}", paymentId, e.getMessage(), e);
-            throw new IllegalArgumentException("포트원 결제 조회 중 오류가 발생했습니다.");
+            throw new PortOneApiException("포트원 결제 조회 중 오류가 발생했습니다.", true);
         }
     }
+
+    /**
+     * 포트원 결제 취소(환불) 요청
+     *
+     * 문서 기준으로 reason은 body에 넣어야 하므로 JSON 바디로 전달합니다.
+     */
+    public PortOnePaymentInfoResponse paymentCancel(String paymentId, String reason) {
+        return paymentCancel(paymentId, reason, buildCancelIdempotencyKey(paymentId));
+    }
+
+    public PortOnePaymentInfoResponse paymentCancel(String paymentId, String reason, String idempotencyKey) {
+        String url = portOneProperties.getApi().getBaseUrl() + "/payments/" + paymentId + "/cancel";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "PortOne " + portOneProperties.getApi().getSecret());
+        headers.set("Idempotency-Key", quoteIdempotencyKey(idempotencyKey));
+        headers.set("Content-Type", "application/json");
+
+        Map<String, Object> body = new HashMap<>();
+        // 문서 기준: 취소 사유(reason)는 body로 보냅니다.
+        body.put("reason", reason);
+        body.put("storeId", portOneProperties.getStore().getId());
+        body.put("skipWebhook", false);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<PortOnePaymentInfoResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    entity,
+                    PortOnePaymentInfoResponse.class
+            );
+
+            PortOnePaymentInfoResponse responseBody = response.getBody();
+            if (responseBody == null) {
+                throw new IllegalArgumentException("포트원 결제 취소 응답이 비어 있습니다.");
+            }
+
+            log.info("포트원 결제 취소 성공 - paymentId={}, status={}, amount={}",
+                    paymentId, responseBody.getStatus(), responseBody.resolveTotalAmount());
+            return responseBody;
+
+        } catch (ResourceAccessException e) {
+            // 네트워크 단절/타임아웃 계열: 재시도 대상
+            log.error("포트원 결제 취소 네트워크 오류 - paymentId={}, message={}", paymentId, e.getMessage(), e);
+            throw new PortOneApiException("포트원 결제 취소 네트워크 오류", true);
+        } catch (RestClientResponseException e) {
+            int statusCode = e.getStatusCode().value();
+            log.error("포트원 결제 취소 HTTP 오류 - paymentId={}, status={}, body={}",
+                    paymentId, statusCode, e.getResponseBodyAsString(), e);
+            boolean retryable = statusCode >= 500 || statusCode == 429;
+            throw new PortOneApiException("포트원 결제 취소 HTTP 오류(" + statusCode + ")", retryable);
+        } catch (PortOneApiException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("포트원 결제 취소 실패 - paymentId={}, message={}", paymentId, e.getMessage(), e);
+            throw new PortOneApiException("포트원 결제 취소 중 오류가 발생했습니다.", true);
+        }
+    }
+
 
     /**
      * 포트원 빌링키 결제 요청 (정기결제)
@@ -102,5 +183,25 @@ public class PortOneApiClient {
             log.error("포트원 빌링키 결제 실패 - paymentId={}, message={}", paymentId, e.getMessage(), e);
             return false;
         }
+    }
+
+    public String buildVerifyIdempotencyKey(String paymentId) {
+        // "같은 verify 작업은 같은 키"를 보장하기 위한 결정적 키
+        return "pay:" + paymentId + ":verify:v1";
+    }
+
+    public String buildCancelIdempotencyKey(String paymentId) {
+        // "같은 cancel 작업은 같은 키"를 보장하기 위한 결정적 키
+        return "pay:" + paymentId + ":cancel:full:v1";
+    }
+
+    private String quoteIdempotencyKey(String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return "\"" + UUID.randomUUID() + "\"";
+        }
+        if (idempotencyKey.startsWith("\"") && idempotencyKey.endsWith("\"")) {
+            return idempotencyKey;
+        }
+        return "\"" + idempotencyKey + "\"";
     }
 }
