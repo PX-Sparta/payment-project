@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CustomerService {
     private final CustomerRepository customerRepository;
+    private final MembershipService membershipService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -35,9 +36,12 @@ public class CustomerService {
                         .password(passwordEncoder.encode(request.password()))
                         .phoneNumber(request.phoneNumber())
                         .grade(Grade.NORMAL)
-                        .points(0)
+                        .currentPoint(0L)
                         .build()
         );
+
+        membershipService.createDefaultMembership(customer);
+
         return CustomerSignupResponse.from(customer);
     }
     
