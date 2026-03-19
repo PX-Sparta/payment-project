@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.apache.logging.log4j.ThreadContext.isEmpty;
+
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -54,6 +56,7 @@ public class OrderService {
 
         // 프론트엔드 요청 규격상 주문상품 목록이 request 안의 items에 담겨서 들어옴
         // 따라서 request.getItems()를 순회하면서 상품별 주문 정보를 처리한다.
+        String errorMessage = "";
         for (CreateOrderRequest.OrderItem itemRequest : request.getItems()) {
 
             // 프론트가 보낸 productId로 실제 상품이 존재하는지 조회
@@ -63,10 +66,23 @@ public class OrderService {
                             "없는 상품입니다. 이 id는 " + itemRequest.getProductId()
                     ));
 
+            // 재고 부족 체크
+            if (product.getStock() < itemRequest.getQuantity()) {
+                errorMessage+= "\n 재고가 부족합니다. 상품명: " + product.getName()
+                                + ", 현재 재고: " + product.getStock()
+                                + ", 요청 수량: " + itemRequest.getQuantity();
+
+            }
+
             OrderItem orderItem = new OrderItem(savedOrder, product, itemRequest.getQuantity());
             orderItems.add(orderItem);
 
             totalAmount += orderItem.getProductPrice() * orderItem.getQuantity();
+        }
+
+        // 에러 메시지 한번에 모아서 던지기.
+        if(!errorMessage.isEmpty()) {
+            throw new IllegalArgumentException(errorMessage);
         }
 
         orderItemRepository.saveAll(orderItems);
