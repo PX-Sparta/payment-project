@@ -5,7 +5,7 @@ import com.bootcamp.paymentdemo.domain.customer.dto.request.CustomerSignupReques
 import com.bootcamp.paymentdemo.domain.customer.dto.response.CustomerLoginResponse;
 import com.bootcamp.paymentdemo.domain.customer.dto.response.CustomerSignupResponse;
 import com.bootcamp.paymentdemo.domain.customer.service.CustomerService;
-import com.bootcamp.paymentdemo.global.common.ApiResponse;
+import com.bootcamp.paymentdemo.global.common.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
