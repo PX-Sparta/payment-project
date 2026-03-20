@@ -31,7 +31,11 @@ public enum CommonError {
 
     // [ 6000: PAYMENT ]
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "P6001", "존재하지 않는 결제 건입니다."),
-    PAYMENT_ALREADY_COMPLETED(HttpStatus.CONFLICT, "P6002", "이미 결제 완료 처리된 주문입니다.");
+    PAYMENT_ALREADY_COMPLETED(HttpStatus.CONFLICT, "P6002", "이미 결제 완료 처리된 주문입니다."),
+
+    // [ 7000: PRODUCT ]
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "P7001", "해당 상품은 존재하지 않는 상품입니다.");
+
 
 
 
