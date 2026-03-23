@@ -126,13 +126,13 @@ public class PointTransactionService {
 
         // 3. [정밀 계산] BigDecimal을 이용한 등급별 적립금 산출
         BigDecimal amount = BigDecimal.valueOf(paidAmount);
-        BigDecimal rate = BigDecimal.valueOf(membership.getGradePolicy().getPointRate());
+        BigDecimal rate = BigDecimal.valueOf(membership.getRankPolicy().getPointRate());
         Long earnedAmount = amount.multiply(rate)
                 .setScale(0, RoundingMode.HALF_UP)
                 .longValue();
 
         log.info("유저 {}({}) 적립 계산: {}원 * {}% = {}P",
-                customerId, membership.getGradePolicy().getGradeName(), paidAmount, rate.multiply(BigDecimal.valueOf(100)), earnedAmount);
+                customerId, membership.getRankPolicy().getRankName(), paidAmount, rate.multiply(BigDecimal.valueOf(100)), earnedAmount);
 
         // 4. [스냅샷] customer의 현재 잔액 업데이트 (조회 성능용)
         Customer customer = membership.getCustomer();
