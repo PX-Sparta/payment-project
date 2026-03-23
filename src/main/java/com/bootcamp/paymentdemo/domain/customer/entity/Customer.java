@@ -18,6 +18,8 @@ import lombok.*;
 @Entity
 @Table(name = "customers")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Customer {
 
     // 고객 ID
@@ -54,7 +56,7 @@ public class Customer {
 
     // 고객 등급
     @Enumerated(EnumType.STRING)
-    private Grade grade = Grade.NORMAL; // 디폴트 값(NORMAL)
+    private Rank rank = Rank.NORMAL; // 디폴트 값(NORMAL)
 
 //    // 고객 포인트   <- 스냅샷으로 아래 변수명으로 변경하였습니다 :D
 //    private int points = 0; // 디폴트 값(0P)
