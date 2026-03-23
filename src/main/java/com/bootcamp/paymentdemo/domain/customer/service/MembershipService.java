@@ -1,10 +1,10 @@
 package com.bootcamp.paymentdemo.domain.customer.service;
 
 
-import com.bootcamp.paymentdemo.domain.customer.dto.response.MembershipGradePolicyResponse;
+import com.bootcamp.paymentdemo.domain.customer.dto.response.MembershipRankPolicyResponse;
 import com.bootcamp.paymentdemo.domain.customer.entity.Customer;
+import com.bootcamp.paymentdemo.domain.customer.entity.MembershipRankPolicy;
 import com.bootcamp.paymentdemo.domain.order.repository.OrderRepository;
-import com.bootcamp.paymentdemo.domain.customer.entity.MembershipGradePolicy;
 import com.bootcamp.paymentdemo.domain.customer.entity.UserMembership;
 import com.bootcamp.paymentdemo.domain.customer.repository.MembershipGradePolicyRepository;
 import com.bootcamp.paymentdemo.domain.customer.repository.UserMembershipRepository;
@@ -29,7 +29,7 @@ public class MembershipService {
     @Transactional
     public void createDefaultMembership(Customer customer) {
         //1. 기본 등급(NORMAL) 정책을 찾아옴.
-        MembershipGradePolicy defaultPolicy = policyRepository.findByGradeCode("NORMAL")
+        MembershipRankPolicy defaultPolicy = policyRepository.findByRankCode("NORMAL")
                 .orElseThrow(() -> new IllegalStateException("없는 등급니다."));
 
         // 반드시 common error 수정해서 넣어야함,
@@ -37,7 +37,7 @@ public class MembershipService {
         //2. 유저와 연결된 멤버십 레코드를 생성함.
         UserMembership membership = UserMembership.builder()
                 .customer(customer)
-                .gradePolicy(defaultPolicy)
+                .rankPolicy(defaultPolicy)
                 .totalPaidAmount(0L)
                 .currentPointRate(defaultPolicy.getPointRate())
                 .build();
@@ -59,9 +59,9 @@ public class MembershipService {
             Long newTotalAmount = membership.getTotalPaidAmount() + paidAmount;
 
             // 3. 바뀐 금액에 따른 정책 조회 및 등급 변경 -> minPaidAmount 필드명을 사용해서 가장 적합한 정책 조회
-            MembershipGradePolicy newPolicy = policyRepository
+            MembershipRankPolicy newPolicy = policyRepository
                     .findTopByMinPaidAmountLessThanEqualOrderByMinPaidAmountDesc(newTotalAmount)
-                    .orElse(membership.getGradePolicy()); // 없으면 현재 유지
+                    .orElse(membership.getRankPolicy()); // 없으면 현재 유지
 
             // 4. 멤버십 업데이트 DirtyChecking
             membership.updateMembership(newPolicy, newTotalAmount);
@@ -87,14 +87,14 @@ public class MembershipService {
 
         // 3. 누적 금액에 맞는 적절한 등급 정책 조회
         // [쿼리 핵심] 기준 금액이 누적액 이하인 등급 중 가장 높은 것 하나 선택
-        MembershipGradePolicy newPolicy =  policyRepository.findTopByMinPaidAmountLessThanEqualOrderByMinPaidAmountDesc(totalPaidAmount)
+        MembershipRankPolicy newPolicy =  policyRepository.findTopByMinPaidAmountLessThanEqualOrderByMinPaidAmountDesc(totalPaidAmount)
                 .orElseThrow(() -> new IllegalStateException("적절한 등급 정책이 없습니다."));
 
         // 4. 등급이 변동되었다면 업데이트
-        if (!membership.getGradePolicy().equals(newPolicy)) {
+        if (!membership.getRankPolicy().equals(newPolicy)) {
             log.info("유저 {} 등급 변동: {} -> {}",
-                    customerId, membership.getGradePolicy().getGradeName(), newPolicy.getGradeName());
-            membership.updateGrade(newPolicy);
+                    customerId, membership.getRankPolicy().getRankName(), newPolicy.getRankName());
+            membership.updateRank(newPolicy);
         }
     }
 
@@ -105,19 +105,19 @@ public class MembershipService {
                 .orElseThrow(() -> new IllegalStateException("멤버십 정보를 찾을 수 없습니다.")); //
 
         return CustomerPointMembershipResponse.MembershipDto.builder()
-                .grade(membership.getGradePolicy().getGradeName()) //
-                .benefitRate(membership.getGradePolicy().getPointRate()) //
+                .grade(membership.getRankPolicy().getRankName()) //
+                .benefitRate(membership.getRankPolicy().getPointRate()) //
                 .accumulatedAmount(membership.getTotalPaidAmount()) //
                 .build();
     }
 
     //멤버십 정책 조회
     @Transactional(readOnly = true)
-    public List<MembershipGradePolicyResponse> getAllMembershipPolicies() {
+    public List<MembershipRankPolicyResponse> getAllMembershipPolicies() {
         // 모든 정책을 조회하여 DTO 리스트로 변환
         return policyRepository.findAll().stream()
-                .filter(MembershipGradePolicy::getIsActive) // 활성화된 정책만 필터링
-                .map(MembershipGradePolicyResponse::from)
+                .filter(MembershipRankPolicy::getIsActive) // 활성화된 정책만 필터링
+                .map(MembershipRankPolicyResponse::from)
                 .toList();
     }
 

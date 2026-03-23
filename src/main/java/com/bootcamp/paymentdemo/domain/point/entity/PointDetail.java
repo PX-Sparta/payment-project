@@ -88,6 +88,11 @@ public class PointDetail extends BaseEntity {
 
     }
 
+    public void expire() { // 👈 cancel에서 expire로 변경
+        this.remainAmount = 0;
+        this.status = PointStatus.EXPIRED; // 👈 상태도 EXPIRED로 명시
+    }
+
 
 }
 
