@@ -45,7 +45,7 @@ jobs:
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/infra-skeleton:latest
             
             echo "3. 도커 컨테이너 실행 (RDS, PortOne, JWT, Redis 환경변수 주입)"
-            # 모든 환경변수를 한 번에 주입합니다.
+            # -e 옵션을 통해 깃허브 시크릿 값을 도커 컨테이너 내부로 한 번에 전달합니다.
             sudo docker run -d --name infra-skeleton -p 8080:8080 \
               -e RDS_HOSTNAME="${{ secrets.RDS_HOSTNAME }}" \
               -e RDS_USERNAME="${{ secrets.RDS_USERNAME }}" \
