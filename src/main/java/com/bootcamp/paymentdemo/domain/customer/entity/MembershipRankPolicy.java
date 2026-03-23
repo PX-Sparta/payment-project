@@ -9,17 +9,17 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor
-@Table(name = "membership_grade_policies")
-public class MembershipGradePolicy extends BaseEntity {
+@Table(name = "membership_rank_policies")
+public class MembershipRankPolicy extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String gradeCode; // NORMAL, VIP, VVIP
+    private String rankCode; // NORMAL, VIP, VVIP
 
     @Column(nullable = false)
-    private String gradeName; // 일반, 우수, 최우수
+    private String rankName; // 일반, 우수, 최우수
 
     @Column(nullable = false)
     private Long minPaidAmount; //

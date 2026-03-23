@@ -1,6 +1,6 @@
 package com.bootcamp.paymentdemo.domain.customer.controller;
 
-import com.bootcamp.paymentdemo.domain.customer.dto.response.MembershipGradePolicyResponse;
+import com.bootcamp.paymentdemo.domain.customer.dto.response.MembershipRankPolicyResponse;
 import com.bootcamp.paymentdemo.domain.customer.service.MembershipService;
 import com.bootcamp.paymentdemo.global.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +21,9 @@ public class CustomerController {
 
     //멤버십 정책 조회
     @GetMapping("/v1/membership-policies")
-    public ResponseEntity<ApiResponse<List<MembershipGradePolicyResponse>>> getMembershipPolicies() {
+    public ResponseEntity<ApiResponse<List<MembershipRankPolicyResponse>>> getMembershipPolicies() {
         // 서비스의 전체 등급 정책 리스트 반환
-        List<MembershipGradePolicyResponse> response = membershipService.getAllMembershipPolicies();
+        List<MembershipRankPolicyResponse> response = membershipService.getAllMembershipPolicies();
 
         return ResponseEntity
                 .status(HttpStatus.OK)
