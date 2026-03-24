@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum SubscriptionStatus {
+public enum SubscriptionStatus2 {
 
     // 구독 상태
     TRIALING("TRIALING", "체험 중"),

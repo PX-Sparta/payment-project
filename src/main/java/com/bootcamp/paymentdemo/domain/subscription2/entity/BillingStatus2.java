@@ -1,6 +1,6 @@
 package com.bootcamp.paymentdemo.domain.subscription2.entity;
 
-public enum BillingStatus {
+public enum BillingStatus2 {
     READY,
     REQUESTED,
     SUCCESS,

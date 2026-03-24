@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SubscriptionRequest {
+public class SubscriptionRequest2 {
 
     @NotBlank(message = "플랜 ID는 필수입니다.")
     private Long planId;           // 선택한 요금제 PK

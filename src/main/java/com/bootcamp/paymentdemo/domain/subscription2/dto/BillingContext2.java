@@ -1,6 +1,6 @@
 package com.bootcamp.paymentdemo.domain.subscription2.dto;
 
-public record BillingContext(
+public record BillingContext2(
         Long billingId,
         Long subscriptionId,
         String billingKey,

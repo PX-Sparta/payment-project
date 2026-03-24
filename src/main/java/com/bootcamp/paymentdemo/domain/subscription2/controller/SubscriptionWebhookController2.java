@@ -1,7 +1,7 @@
 package com.bootcamp.paymentdemo.domain.subscription2.controller;
 
 import com.bootcamp.paymentdemo.domain.payment.dto.Request.PortOneWebhookRequest;
-import com.bootcamp.paymentdemo.domain.subscription2.service.SubscriptionService;
+import com.bootcamp.paymentdemo.domain.subscription2.service.SubscriptionService2;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/webhooks")
 @RequiredArgsConstructor
 @Slf4j
-public class SubscriptionWebhookController {
+public class SubscriptionWebhookController2 {
 
-    private final SubscriptionService subscriptionService;
+    private final SubscriptionService2 subscriptionService;
 
     @PostMapping("/portone")
     public ResponseEntity<Void> handlePortOneWebhook(@RequestBody PortOneWebhookRequest request) {
