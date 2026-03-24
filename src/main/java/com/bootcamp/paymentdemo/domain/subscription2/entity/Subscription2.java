@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor
-public class Subscription extends BaseEntity {
+public class Subscription2 extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,24 +24,24 @@ public class Subscription extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id")
-    private SubscriptionPlan plan;
+    private SubscriptionPlan2 plan;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_method_id")
     private PaymentMethod2 paymentMethod;
 
     @Enumerated(EnumType.STRING)
-    private SubscriptionStatus status; // PENDING(빌링키 발급 이후 1차저장), ACTIVE(결제 완료 후 2차저장), PAST_DUE(미납), CANCELED(해지)
+    private SubscriptionStatus2 status; // PENDING(빌링키 발급 이후 1차저장), ACTIVE(결제 완료 후 2차저장), PAST_DUE(미납), CANCELED(해지)
 
     private LocalDateTime nextBillingDate;  // 다음 결제일 <- 스케줄러 활용
     private LocalDateTime trialEndDate;  // 체험 종료일
 
-    public void updateStatus(SubscriptionStatus subscriptionStatus) {
+    public void updateStatus(SubscriptionStatus2 subscriptionStatus) {
         this.status = subscriptionStatus;
     }
 
     public void activate() {
-        this.status = SubscriptionStatus.ACTIVE; // 상태를 ACTIVE로 변경
+        this.status = SubscriptionStatus2.ACTIVE; // 상태를 ACTIVE로 변경
 
         // 다음 결제일 갱신 (현재 시간 혹은 기존 결제일 기준 + 1개월)
         // 보통 결제가 완료된 시점으로부터 한 달 뒤로 설정합니다.
@@ -54,13 +54,13 @@ public class Subscription extends BaseEntity {
     }
 
     public void cancel() {
-        this.status = SubscriptionStatus.CANCELED;
+        this.status = SubscriptionStatus2.CANCELED;
         // 다음 결제일을 null로 만들어서 스케줄러 대상에서 제외시킵니다.
         this.nextBillingDate = null;
     }
 
     public void startTrial(int trialDays) {
-        this.status = SubscriptionStatus.TRIALING; // 상태 변경
+        this.status = SubscriptionStatus2.TRIALING; // 상태 변경
         this.trialEndDate = LocalDateTime.now().plusDays(trialDays); // 체험 종료일 설정
 
         // 체험 기간이 끝나고 나서 결제가 일어나야 하므로
@@ -69,7 +69,7 @@ public class Subscription extends BaseEntity {
     }
 
     public void toPastDue() {
-        this.status = SubscriptionStatus.PAST_DUE;
+        this.status = SubscriptionStatus2.PAST_DUE;
         // 여기서 알림 발송 이벤트를 던지거나 로그를 남깁니다.
     }
 

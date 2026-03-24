@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "subscription_plan")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SubscriptionPlan extends BaseEntity {
+public class SubscriptionPlan2 extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
