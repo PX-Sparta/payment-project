@@ -23,11 +23,11 @@ public class Subscription2 extends BaseEntity {
     private Long customerId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plan_id")
+    @JoinColumn(name = "plan2_id")
     private SubscriptionPlan2 plan;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payment_method_id")
+    @JoinColumn(name = "payment_method2_id")
     private PaymentMethod2 paymentMethod;
 
     @Enumerated(EnumType.STRING)
