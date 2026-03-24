@@ -76,7 +76,7 @@ public class SubscriptionService2 {
 
            // 만약 이미 진행 중인 건이 있다면 새로 만들지 않고 기존 ID를 돌려주거나 예외를 던집니다.
            // 여기서는 안전하게 예외를 던져서 중복 진행을 막는 방식을 추천해요.
-           boolean alreadyExists = billingRepository.existsByCustomerIdAndPlanIdAndScheduledDate(
+           boolean alreadyExists = billingRepository.existsByCustomerAndPlanAndDate(
                    customerId, planId, today);
 
            if (alreadyExists) {

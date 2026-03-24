@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.domain.subscription2.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;
 
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "unique_subscription_scheduled_date",
-                        columnNames = {"subscription_id", "scheduled_date"} // 이 두 조합은 유일해야 함
+                        columnNames = {"subscription2_id", "scheduled_date"} // 이 두 조합은 유일해야 함
                 )
         }
 )
@@ -28,11 +29,15 @@ public class SubscriptionBilling2 {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subscription_id")
+    @JoinColumn(name = "subscription2_id")
     private Subscription2 subscription;
 
     private Long amount;
     private String paymentId;
+
+    @CreatedDate // Spring Data JPA 사용 시
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
     private LocalDateTime scheduledDate;
 
