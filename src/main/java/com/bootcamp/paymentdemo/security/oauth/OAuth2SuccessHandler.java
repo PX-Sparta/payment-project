@@ -57,6 +57,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                                 .name(name)
                                 .password(passwordEncoder.encode("social_login_dummy_password")) // 소셜 로그인은 비번이 불필요하므로 더미값
                                 .phoneNumber("010-0000-0000") // 필수값이면 더미값
+                                .currentPoint(0L)
+                                .rank(com.bootcamp.paymentdemo.domain.customer.enums.Rank.NORMAL)
                                 .build()
                 ));
 
