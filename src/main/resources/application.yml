@@ -86,7 +86,8 @@ portone:
 # JWT Configuration (deploy.yml의 환경변수명 JWT_SECRET_KEY와 완벽 일치시킴)
 jwt:
   secret: ${JWT_SECRET_KEY:commercehub-secret-key-for-demo-please-change-this-in-production-environment}
-  token-validity-in-seconds: ${JWT_VALIDITY:86400}  # 24 hours
+  access-token-expiration: 86400000  # 24시간 (밀리초 단위, 24 * 60 * 60 * 1000)
+  refresh-token-expiration: 604800000 # 7일 (밀리초 단위)
 
 # UI Branding Configuration
 app:
