@@ -32,11 +32,12 @@ public class JwtTokenProvider {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
-    public String generateAccessToken(Long id) {
-        return generate(id, accessTokenExpiration);
+    public String generateAccessToken(Long id, String email) {
+        return generate(id, email ,accessTokenExpiration);
     }
-    public String generateRefreshToken(Long id) {
-        return generate(id, refreshTokenExpiration);
+
+    public String generateRefreshToken(Long id, String email) {
+        return generate(id, email , refreshTokenExpiration);
     }
 
     public Long extractCustomerId(String token) {
@@ -61,13 +62,20 @@ public class JwtTokenProvider {
         }
     }
 
-    private String generate(Long id, long expiration) {
+    private String generate(Long id, String email, long expiration) {
         Date now = new Date();
-        return Jwts.builder()
+        JwtBuilder builder = Jwts.builder()
                 .subject(String.valueOf(id))
+                .claim("email", email)
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + expiration))
-                .signWith(secretKey)
-                .compact();
+                .signWith(secretKey);
+
+        // 이메일이 전달되었다면 커스텀 클레임에 추가
+        if (email != null && !email.trim().isEmpty()) {
+            builder.claim("email", email);
+        }
+
+        return builder.compact();
     }
 }

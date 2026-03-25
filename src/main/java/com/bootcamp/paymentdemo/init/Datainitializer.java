@@ -8,6 +8,7 @@ import com.bootcamp.paymentdemo.domain.product.repository.ProductRepository;
 import com.bootcamp.paymentdemo.domain.subscription.entity.BillingInterval;
 import com.bootcamp.paymentdemo.domain.subscription.entity.Plan;
 import com.bootcamp.paymentdemo.domain.subscription.repository.PlanRepository;
+import com.bootcamp.paymentdemo.domain.subscription2.repository.SubscriptionPlanRepository2;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
