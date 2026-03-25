@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Builder
 public record CurrentCustomerResponseDto(
-        Long customerId,
+        Long customerUid,
         String email,
         String name,
         String phoneNumber,
@@ -15,7 +15,7 @@ public record CurrentCustomerResponseDto(
 ) {
     public static CurrentCustomerResponseDto from(Customer customer) {
         return CurrentCustomerResponseDto.builder()
-                .customerId(customer.getId())
+                .customerUid(customer.getId())
                 .email(customer.getEmail())
                 .name(customer.getName())
                 .phoneNumber(customer.getPhoneNumber())
