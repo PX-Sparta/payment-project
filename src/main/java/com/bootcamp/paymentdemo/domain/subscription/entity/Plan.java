@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 
-// 구독 플랜
+// 구독 정보들 테이블.
 @Entity
 @Table(name = "plans")
 @Getter
@@ -36,7 +36,7 @@ public class Plan extends BaseEntity {
     private Integer price;
 
 
-    // 구독 월,년 (예: 'monthly' or 'yearly')
+    // 구독 월,년 (예: 'monthly' 또는 'yearly')
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BillingInterval billingInterval;
@@ -45,26 +45,30 @@ public class Plan extends BaseEntity {
     @Column(nullable = false)
     private Integer trialPeriodDays;
 
-    // 구독 상태
+
+
+    // 구독 플랜 레벨
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PlanStatus status;
+    private PlanLevel planLevel;
 
     private String description;
 
     public Plan(
             String planName,
+            PlanLevel planLevel,
             Integer price,
             BillingInterval billingInterval,
             Integer trialPeriodDays,
             String description
     ) {
         this.planName = planName;
+        this.planLevel = planLevel;
         this.price = price;
         this.billingInterval = billingInterval;
         this.trialPeriodDays = trialPeriodDays == null ? 0 : trialPeriodDays;
         this.description = description;
-        this.status = PlanStatus.ACTIVE;
+
     }
 
     // 체험 기간 확인 로직.
@@ -72,11 +76,5 @@ public class Plan extends BaseEntity {
         return trialPeriodDays > 0;
     }
 
-    public void deactivate() {
-        this.status = PlanStatus.INACTIVE;
-    }
 
-    public void activate() {
-        this.status = PlanStatus.ACTIVE;
-    }
 }

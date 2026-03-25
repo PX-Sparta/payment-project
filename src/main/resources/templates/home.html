@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
-    <title>홈 - Commerce Demo</title>
+    <title>홈 - 스파르타 황금마차</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script th:src="@{/js/cookie-util.js}"></script>
     <script th:src="@{/js/app-config.js}"></script>
@@ -17,15 +17,15 @@
     <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="/" class="navbar-brand">🏪 CommerceHub</a>
+            <a href="/" class="navbar-brand"><img th:src="@{/images/sparta-logo.png}" src="/images/sparta-logo.png" alt="스파르타 황금마차" style="height: 96px;"></a>
             <ul class="navbar-nav">
-                <li><a href="/" class="nav-link active">홈</a></li>
-                <li><a href="/pages/shop" class="nav-link">상점</a></li>
-                <li><a href="/pages/orders" class="nav-link">주문</a></li>
-                <li><a href="/pages/points" class="nav-link">포인트</a></li>
-                <li><a href="/pages/plans" class="nav-link">플랜</a></li>
-                <li><a href="/pages/subscribe" class="nav-link">구독 신청</a></li>
-                <li><a href="/pages/subscriptions" class="nav-link">구독 관리</a></li>
+                <li><a href="/" class="nav-link active">마차 입구</a></li>
+                <li><a href="/pages/shop" class="nav-link">메뉴판</a></li>
+                <li><a href="/pages/orders" class="nav-link">주문서</a></li>
+                <li><a href="/pages/points" class="nav-link">도장카드</a></li>
+                <li><a href="/pages/plans" class="nav-link">단골 등급</a></li>
+                <li><a href="/pages/subscribe" class="nav-link">정기 배달</a></li>
+                <li><a href="/pages/subscriptions" class="nav-link">정기배달 관리</a></li>
             </ul>
             <div class="navbar-actions">
                 <div class="config-badge-container"></div>
@@ -37,10 +37,10 @@
     <div class="main-container">
         <div class="content-area">
             <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">
-                🛍️ Commerce Payment & Subscription Demo
+                ⚔️ 스파르타 황금마차
             </h1>
             <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 2rem;">
-                부트캠프용 결제/구독 UI 템플릿 - PortOne 연동 데모
+                스파르타 전사들을 위한 보급품 상점 - 결제 & 구독 시스템
             </p>
 
             <div class="alert alert-info">
@@ -52,20 +52,20 @@
             <div class="card-grid">
                 <!-- Shop Card -->
                 <div class="card">
-                    <div class="card-header">🛒 상점</div>
-                    <div class="card-subtitle">상품 목록 및 주문 생성</div>
+                    <div class="card-header">🍖 메뉴판</div>
+                    <div class="card-subtitle">황금마차 메뉴 목록 및 주문</div>
                     <div class="card-body">
                         <ul class="features-list">
-                            <li class="feature-item">상품 목록 조회</li>
-                            <li class="feature-item">주문 생성 API 호출</li>
+                            <li class="feature-item">메뉴 목록 조회</li>
+                            <li class="feature-item">주문 생성</li>
                         </ul>
-                        <a href="/pages/shop" class="btn btn-primary" style="margin-top: 1rem;">상품 보러가기</a>
+                        <a href="/pages/shop" class="btn btn-primary" style="margin-top: 1rem;">메뉴판 보기</a>
                     </div>
                 </div>
 
                 <!-- Orders Card -->
                 <div class="card">
-                    <div class="card-header">📦 주문</div>
+                    <div class="card-header">📜 주문서</div>
                     <div class="card-subtitle">주문 조회 및 결제 처리</div>
                     <div class="card-body">
                         <ul class="features-list">
@@ -73,69 +73,69 @@
                             <li class="feature-item">결제 확정 (Confirm)</li>
                             <li class="feature-item">결제 취소(환불)</li>
                         </ul>
-                        <a href="/pages/orders" class="btn btn-primary" style="margin-top: 1rem;">주문 관리하기</a>
+                        <a href="/pages/orders" class="btn btn-primary" style="margin-top: 1rem;">주문서 보기</a>
                     </div>
                 </div>
 
                 <!-- Points Card -->
                 <div class="card">
-                    <div class="card-header">💰 포인트</div>
-                    <div class="card-subtitle">포인트 포함 결제 테스트</div>
+                    <div class="card-header">🪙 도장카드</div>
+                    <div class="card-subtitle">포인트로 할인 결제</div>
                     <div class="card-body">
                         <ul class="features-list">
                             <li class="feature-item">포인트 입력 모달</li>
                             <li class="feature-item">포인트 차감 후 결제</li>
                             <li class="feature-item">독립적인 테스트 환경</li>
                         </ul>
-                        <a href="/pages/points" class="btn btn-primary" style="margin-top: 1rem;">포인트 결제하기</a>
+                        <a href="/pages/points" class="btn btn-primary" style="margin-top: 1rem;">도장카드 보기</a>
                     </div>
                 </div>
 
                 <!-- Plans Card -->
                 <div class="card">
-                    <div class="card-header">⭐ 플랜</div>
-                    <div class="card-subtitle">구독 플랜 목록</div>
+                    <div class="card-header">⭐ 단골 등급</div>
+                    <div class="card-subtitle">등급별 정기 배달 플랜</div>
                     <div class="card-body">
                         <ul class="features-list">
-                            <li class="feature-item">베이직 / 프로 / 맥스</li>
-                            <li class="feature-item">월 단위 정기결제</li>
-                            <li class="feature-item">플랜별 혜택 표시</li>
+                            <li class="feature-item">신병 / 정예 / 왕의 근위대</li>
+                            <li class="feature-item">월 단위 정기 배달</li>
+                            <li class="feature-item">등급별 혜택 표시</li>
                         </ul>
-                        <a href="/pages/plans" class="btn btn-primary" style="margin-top: 1rem;">플랜 보러가기</a>
+                        <a href="/pages/plans" class="btn btn-primary" style="margin-top: 1rem;">단골 등급 보기</a>
                     </div>
                 </div>
 
                 <!-- Subscribe Card -->
                 <div class="card">
-                    <div class="card-header">💳 구독 신청</div>
-                    <div class="card-subtitle">구독 신청 및 빌링키 발급</div>
+                    <div class="card-header">🚚 정기 배달</div>
+                    <div class="card-subtitle">정기 배달 신청 및 결제수단 등록</div>
                     <div class="card-body">
                         <ul class="features-list">
                             <li class="feature-item">빌링키 발급 (PortOne SDK)</li>
                             <li class="feature-item">결제수단 저장</li>
-                            <li class="feature-item">구독 생성 API 호출</li>
+                            <li class="feature-item">정기 배달 생성</li>
                         </ul>
-                        <a href="/pages/subscribe" class="btn btn-primary" style="margin-top: 1rem;">구독 신청하기</a>
+                        <a href="/pages/subscribe" class="btn btn-primary" style="margin-top: 1rem;">정기 배달 신청</a>
                     </div>
                 </div>
 
                 <!-- Subscriptions Card -->
                 <div class="card">
-                    <div class="card-header">🔄 구독 관리</div>
-                    <div class="card-subtitle">구독 관리</div>
+                    <div class="card-header">🔄 정기배달 관리</div>
+                    <div class="card-subtitle">정기 배달 현황 관리</div>
                     <div class="card-body">
                         <ul class="features-list">
-                            <li class="feature-item">이번 주기 청구 실행</li>
-                            <li class="feature-item">구독 해지</li>
-                            <li class="feature-item">청구 내역 조회</li>
+                            <li class="feature-item">이번 주기 배달 실행</li>
+                            <li class="feature-item">배달 해지</li>
+                            <li class="feature-item">배달 내역 조회</li>
                         </ul>
-                        <a href="/pages/subscriptions" class="btn btn-primary" style="margin-top: 1rem;">구독 관리하기</a>
+                        <a href="/pages/subscriptions" class="btn btn-primary" style="margin-top: 1rem;">정기배달 관리</a>
                     </div>
                 </div>
             </div>
 
             <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-secondary); border-radius: var(--radius-lg);">
-                <h2 style="margin-bottom: 1rem;">🚀 시작하기</h2>
+                <h2 style="margin-bottom: 1rem;">⚔️ 전투 준비</h2>
                 <ol style="margin-left: 1.5rem; line-height: 2;">
                     <li><strong>API 구현:</strong> 백엔드 API를 구현하고 <code>application.yml</code>의 <code>app.demo-api.base-url</code>을 수정하세요.</li>
                     <li><strong>엔드포인트 연결:</strong> 각 엔드포인트 경로를 실제 구현한 경로로 변경하세요.</li>

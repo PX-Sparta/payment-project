@@ -6,6 +6,7 @@ import com.bootcamp.paymentdemo.domain.customer.repository.CustomerRepository;
 import com.bootcamp.paymentdemo.domain.order.dto.Request.CreateOrderRequest;
 import com.bootcamp.paymentdemo.domain.order.dto.Response.CreateOrderResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.Response.OrderDetailResponse;
+import com.bootcamp.paymentdemo.domain.order.dto.Response.OrderDetailListResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.Response.OrderListResponse;
 import com.bootcamp.paymentdemo.domain.order.entity.Order;
 import com.bootcamp.paymentdemo.domain.order.entity.OrderItem;
@@ -118,6 +119,31 @@ public class OrderService {
         );
     }
 
+    // 주문 상품 목록 리스트 조회
+    @Transactional(readOnly = true)
+    public List<OrderDetailListResponse> getOrderListDetail(String orderId) {
+        List<OrderItem> orderItems = orderItemRepository.findAllByOrderOrderId(orderId);
+
+        if (orderItems.isEmpty()) {
+            throw new IllegalArgumentException("주문상품이 없습니다.");
+        }
+
+        List<OrderDetailListResponse> responseList = new ArrayList<>();
+
+        for (OrderItem orderItem : orderItems) {
+            OrderDetailListResponse response = new OrderDetailListResponse(
+                    orderItem.getProduct().getId(),
+                    orderItem.getProductName(),
+                    orderItem.getProductPrice(),
+                    orderItem.getQuantity(),
+                    orderItem.getProductPrice() * orderItem.getQuantity()
+            );
+            responseList.add(response);
+        }
+
+        return responseList;
+    }
+
     // 주문 목록 조회
     @Transactional(readOnly = true)
     public List<OrderListResponse> getOrderList(Long customerId) {
@@ -223,4 +249,3 @@ public class OrderService {
     }
 
 }
-

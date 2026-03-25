@@ -64,7 +64,26 @@ function handleLogout() {
     window.location.href = '/pages/login';
 }
 
-// 페이지 로드 시 인증 체크
+/**
+ * OAuth2 소셜 로그인 콜백 처리
+ * 성공 시 /?token={JWT} 형태로 리다이렉트되므로, URL에서 토큰을 추출하여 쿠키에 저장
+ */
+function handleOAuth2Callback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (token) {
+        // 토큰 저장
+        if (typeof saveToken === 'function') saveToken(token);
+
+        // URL에서 token 파라미터 제거 (히스토리 교체)
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+    }
+}
+
+// 페이지 로드 시 OAuth2 콜백 처리 후 인증 체크
 document.addEventListener('DOMContentLoaded', function() {
+    handleOAuth2Callback();
     checkAuthentication();
 });

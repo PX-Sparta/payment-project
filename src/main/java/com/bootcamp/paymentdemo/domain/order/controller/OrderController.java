@@ -4,6 +4,7 @@ package com.bootcamp.paymentdemo.domain.order.controller;
 import com.bootcamp.paymentdemo.domain.order.dto.Request.CreateOrderRequest;
 import com.bootcamp.paymentdemo.domain.order.dto.Response.CreateOrderResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.Response.OrderDetailResponse;
+import com.bootcamp.paymentdemo.domain.order.dto.Response.OrderDetailListResponse;
 import com.bootcamp.paymentdemo.domain.order.dto.Response.OrderListResponse;
 import com.bootcamp.paymentdemo.domain.order.service.OrderService;
 import jakarta.validation.Valid;
@@ -34,8 +35,8 @@ public class OrderController {
 
 
 
-     //    @GetMapping("/orders/{orderId}")
-    // 주문 상세 조회
+
+    // 주문 상세  조회
         @GetMapping("/orders/{orderId}/items/{productId}")
     public ResponseEntity<OrderDetailResponse> getOrder(
                 @PathVariable String orderId,
@@ -46,6 +47,18 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrderDetail(orderId,productId));
 
     }
+
+    // 주문 상세 리스트 조회
+    @GetMapping("/orders/{orderId}/items")
+    public ResponseEntity<List<OrderDetailListResponse>> getOrderList(
+            @PathVariable String orderId
+    ){
+
+        return ResponseEntity.ok(orderService.getOrderListDetail(orderId));
+    }
+
+
+
 
     // 주문 목록(내역) 조회
     @GetMapping("/orders/customer/{customerId}")
