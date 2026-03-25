@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
-    <title>주문 - Commerce Demo</title>
+    <title>주문 - 스파르타 황금마차</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
     <script th:src="@{/js/cookie-util.js}"></script>
@@ -18,15 +18,15 @@
 <body>
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="/" class="navbar-brand">🏪 CommerceHub</a>
+            <a href="/" class="navbar-brand"><img th:src="@{/images/sparta-logo.png}" src="/images/sparta-logo.png" alt="스파르타 황금마차" style="height: 96px;"></a>
             <ul class="navbar-nav">
-                <li><a href="/" class="nav-link">홈</a></li>
-                <li><a href="/pages/shop" class="nav-link">상점</a></li>
-                <li><a href="/pages/orders" class="nav-link active">주문</a></li>
-                <li><a href="/pages/points" class="nav-link">포인트</a></li>
-                <li><a href="/pages/plans" class="nav-link">플랜</a></li>
-                <li><a href="/pages/subscribe" class="nav-link">구독 신청</a></li>
-                <li><a href="/pages/subscriptions" class="nav-link">구독 관리</a></li>
+                <li><a href="/" class="nav-link">마차 입구</a></li>
+                <li><a href="/pages/shop" class="nav-link">메뉴판</a></li>
+                <li><a href="/pages/orders" class="nav-link active">주문서</a></li>
+                <li><a href="/pages/points" class="nav-link">도장카드</a></li>
+                <li><a href="/pages/plans" class="nav-link">단골 등급</a></li>
+                <li><a href="/pages/subscribe" class="nav-link">정기 배달</a></li>
+                <li><a href="/pages/subscriptions" class="nav-link">정기배달 관리</a></li>
             </ul>
             <div class="navbar-actions">
                 <div class="config-badge-container"></div>
@@ -79,6 +79,106 @@
                     </div>
                     <div id="order-list-empty" style="display: none; text-align: center; padding: 2rem; color: var(--text-secondary);">
                         주문 내역이 없습니다. <a href="/pages/shop" style="color: var(--primary);">상점</a>에서 주문을 생성해주세요.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 결제 요약 조회 -->
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-header">결제 요약 조회</div>
+                <div class="card-subtitle">결제 ID로 결제 상태/금액을 조회합니다</div>
+                <div class="card-body">
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-end;">
+                        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                            <label class="form-label">결제 ID (Payment ID)</label>
+                            <input type="text" id="payment-summary-id" class="form-input" placeholder="payment_xyz">
+                        </div>
+                        <button class="btn btn-secondary" style="height: fit-content;" onclick="lookupPayment()">
+                            조회
+                        </button>
+                    </div>
+                    <div id="payment-summary-result" style="display: none; margin-top: 1rem;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tbody>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 0.5rem; font-weight: 600; width: 120px; color: var(--text-secondary);">결제 ID</td>
+                                    <td id="ps-paymentId" style="padding: 0.5rem; font-family: monospace;"></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">결제 상태</td>
+                                    <td id="ps-status" style="padding: 0.5rem;"></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">결제 금액</td>
+                                    <td id="ps-amount" style="padding: 0.5rem;"></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">결제일</td>
+                                    <td id="ps-paidAt" style="padding: 0.5rem;"></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">환불일</td>
+                                    <td id="ps-refundedAt" style="padding: 0.5rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="payment-summary-empty" style="display: none; margin-top: 1rem; text-align: center; padding: 1rem; color: var(--text-secondary);">
+                        결제 정보를 찾을 수 없습니다.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 주문 상세 조회 -->
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-header">주문 상세 조회</div>
+                <div class="card-subtitle">주문 ID와 상품 ID로 주문 내 상품 상세 정보를 조회합니다</div>
+                <div class="card-body">
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                            <label class="form-label">주문 ID (Order ID)</label>
+                            <input type="text" id="order-detail-orderId" class="form-input" placeholder="주문 ID 입력">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
+                            <label class="form-label">상품 ID (Product ID)</label>
+                            <input type="number" id="order-detail-productId" class="form-input" placeholder="상품 ID 입력">
+                        </div>
+                        <button class="btn btn-secondary" style="height: fit-content;" onclick="lookupOrderItem()">
+                            조회
+                        </button>
+                    </div>
+                    <div id="order-detail-result" style="display: none; margin-top: 1rem;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tbody>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 0.5rem; font-weight: 600; width: 120px; color: var(--text-secondary);">주문 번호</td>
+                                    <td id="od-orderNumber" style="padding: 0.5rem;"></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">주문 ID</td>
+                                    <td id="od-orderId" style="padding: 0.5rem; font-family: monospace;"></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">상품명</td>
+                                    <td id="od-productName" style="padding: 0.5rem;"></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">단가</td>
+                                    <td id="od-price" style="padding: 0.5rem;"></td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">수량</td>
+                                    <td id="od-quantity" style="padding: 0.5rem;"></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">아이템 합계</td>
+                                    <td id="od-itemTotalAmount" style="padding: 0.5rem; font-weight: 600; color: var(--primary);"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="order-detail-empty" style="display: none; margin-top: 1rem; text-align: center; padding: 1rem; color: var(--text-secondary);">
+                        주문 상세 정보를 찾을 수 없습니다.
                     </div>
                 </div>
             </div>
@@ -181,7 +281,7 @@
                 }
 
                 // orders.html에 필요한 API들
-                const requiredApis = ['list-orders', 'create-payment', 'confirm-payment', 'cancel-payment'];
+                const requiredApis = ['list-orders', 'create-payment', 'confirm-payment', 'cancel-payment', 'get-payment', 'get-order-item'];
                 const apiItems = [];
 
                 requiredApis.forEach(apiKey => {
@@ -289,7 +389,9 @@
 
                 tr.innerHTML = `
                     <td style="padding: 0.75rem; font-weight: 600;">${order.orderNumber}</td>
-                    <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem; color: var(--text-secondary);">${order.orderId}</td>
+                    <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem;">
+                        <a href="javascript:void(0)" onclick="viewOrderDetail('${order.orderId}')" style="color: var(--primary); text-decoration: underline; cursor: pointer;">${order.orderId}</a>
+                    </td>
                     <td style="padding: 0.75rem;">
                         <div style="font-weight: 600;">${order.totalAmount.toLocaleString()}원</div>
                         ${usedPoints > 0 ? `<div style="font-size: 0.75rem; color: var(--text-secondary);">실결제: ${finalAmount.toLocaleString()}원</div>` : ''}
@@ -348,8 +450,9 @@
                 const result = await openPortOnePayment(paymentData);
 
                 if (result.paymentId) {
-                    // 결제 완료 후 모드 B에 자동 입력
+                    // 결제 완료 후 모드 B 및 결제 요약에 자동 입력
                     document.getElementById('manual-payment-id').value = result.paymentId;
+                    document.getElementById('payment-summary-id').value = result.paymentId;
 
                     showNotification('💳 결제 완료! 아래에서 결제 확정/취소를 테스트할 수 있습니다.', 'success');
 
@@ -421,6 +524,115 @@
                 'DELIVERED': '배송 완료'
             };
             return texts[status] || status;
+        }
+
+        // 주문 상세 조회
+        async function lookupOrderItem() {
+            const orderId = document.getElementById('order-detail-orderId').value.trim();
+            const productId = document.getElementById('order-detail-productId').value.trim();
+
+            if (!orderId || !productId) {
+                showNotification('주문 ID와 상품 ID를 모두 입력해주세요', 'warning');
+                return;
+            }
+
+            const resultEl = document.getElementById('order-detail-result');
+            const emptyEl = document.getElementById('order-detail-empty');
+            resultEl.style.display = 'none';
+            emptyEl.style.display = 'none';
+
+            try {
+                const data = await makeApiRequest('get-order-item', {
+                    pathParams: { orderId: orderId, productId: productId }
+                });
+
+                document.getElementById('od-orderNumber').textContent = data.orderNumber || '-';
+                document.getElementById('od-orderId').textContent = data.orderId || orderId;
+                document.getElementById('od-productName').textContent = data.productName || '-';
+                document.getElementById('od-price').textContent =
+                    data.price != null ? data.price.toLocaleString() + '원' : '-';
+                document.getElementById('od-quantity').textContent = data.quantity || '-';
+                document.getElementById('od-itemTotalAmount').textContent =
+                    data.itemTotalAmount != null ? data.itemTotalAmount.toLocaleString() + '원' : '-';
+
+                resultEl.style.display = 'block';
+            } catch (error) {
+                console.error('주문 상세 조회 실패:', error);
+                emptyEl.style.display = 'block';
+            }
+        }
+
+        // 주문 목록에서 상세 조회 자동 입력
+        function viewOrderDetail(orderId) {
+            document.getElementById('order-detail-orderId').value = orderId;
+            document.getElementById('order-detail-productId').value = '';
+            document.getElementById('order-detail-productId').focus();
+
+            // 주문 상세 섹션으로 스크롤
+            document.getElementById('order-detail-orderId').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // 결제 요약 조회
+        async function lookupPayment() {
+            const paymentId = document.getElementById('payment-summary-id').value.trim();
+            if (!paymentId) {
+                showNotification('결제 ID를 입력해주세요', 'warning');
+                return;
+            }
+
+            const resultEl = document.getElementById('payment-summary-result');
+            const emptyEl = document.getElementById('payment-summary-empty');
+            resultEl.style.display = 'none';
+            emptyEl.style.display = 'none';
+
+            try {
+                const data = await makeApiRequest('get-payment', {
+                    pathParams: { paymentId: paymentId }
+                });
+
+                // 결제 상태 배지 스타일
+                const statusStyle = getPaymentStatusStyle(data.status);
+
+                document.getElementById('ps-paymentId').textContent = data.paymentId || paymentId;
+                document.getElementById('ps-status').innerHTML =
+                    `<span style="display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85rem; font-weight: 500; ${statusStyle}">${data.status || '-'}</span>`;
+                document.getElementById('ps-amount').textContent =
+                    data.totalAmount != null ? data.totalAmount.toLocaleString() + '원' : '-';
+                document.getElementById('ps-paidAt').textContent =
+                    data.paidAt ? formatDateTime(data.paidAt) : '-';
+                document.getElementById('ps-refundedAt').textContent =
+                    data.refundedAt ? formatDateTime(data.refundedAt) : '-';
+
+                resultEl.style.display = 'block';
+            } catch (error) {
+                console.error('결제 조회 실패:', error);
+                emptyEl.style.display = 'block';
+            }
+        }
+
+        // 결제 상태 스타일
+        function getPaymentStatusStyle(status) {
+            const styles = {
+                'READY': 'background: #FEF3C7; color: #92400E;',
+                'PAID': 'background: #D1FAE5; color: #065F46;',
+                'CANCELLED': 'background: #FEE2E2; color: #991B1B;',
+                'FAILED': 'background: #FEE2E2; color: #991B1B;',
+                'REFUNDED': 'background: #E0E7FF; color: #3730A3;'
+            };
+            return styles[status] || 'background: #F3F4F6; color: #374151;';
+        }
+
+        // 날짜 포맷
+        function formatDateTime(isoString) {
+            try {
+                const date = new Date(isoString);
+                return date.toLocaleString('ko-KR', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            } catch (e) {
+                return isoString;
+            }
         }
     </script>
 </body>

@@ -108,11 +108,15 @@ public class Subscription extends BaseEntity {
         this.canceledAt = LocalDateTime.now();
     }
 
+
+    // 구독 종료
     public void end() {
         this.status = SubscriptionStatus.ENDED;
         this.endedAt = LocalDateTime.now();
     }
 
+
+    // 구독 갱신.
     public void renew() {
         this.status = SubscriptionStatus.ACTIVE;
         this.currentPeriodStart = this.currentPeriodEnd;

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
-    <title>구독 관리 - Commerce Demo</title>
+    <title>구독 관리 - 스파르타 황금마차</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
     <script th:src="@{/js/cookie-util.js}"></script>
@@ -18,15 +18,15 @@
 <body>
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="/" class="navbar-brand">🏪 CommerceHub</a>
+            <a href="/" class="navbar-brand"><img th:src="@{/images/sparta-logo.png}" src="/images/sparta-logo.png" alt="스파르타 황금마차" style="height: 96px;"></a>
             <ul class="navbar-nav">
-                <li><a href="/" class="nav-link">홈</a></li>
-                <li><a href="/pages/shop" class="nav-link">상점</a></li>
-                <li><a href="/pages/orders" class="nav-link">주문</a></li>
-                <li><a href="/pages/points" class="nav-link">포인트</a></li>
-                <li><a href="/pages/plans" class="nav-link">플랜</a></li>
-                <li><a href="/pages/subscribe" class="nav-link">구독 신청</a></li>
-                <li><a href="/pages/subscriptions" class="nav-link active">구독 관리</a></li>
+                <li><a href="/" class="nav-link">마차 입구</a></li>
+                <li><a href="/pages/shop" class="nav-link">메뉴판</a></li>
+                <li><a href="/pages/orders" class="nav-link">주문서</a></li>
+                <li><a href="/pages/points" class="nav-link">도장카드</a></li>
+                <li><a href="/pages/plans" class="nav-link">단골 등급</a></li>
+                <li><a href="/pages/subscribe" class="nav-link">정기 배달</a></li>
+                <li><a href="/pages/subscriptions" class="nav-link active">정기배달 관리</a></li>
             </ul>
             <div class="navbar-actions">
                 <div class="config-badge-container"></div>
