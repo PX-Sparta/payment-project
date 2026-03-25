@@ -21,15 +21,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Plan extends BaseEntity {
 
-    private static final int MONTHLY_BASE_PRICE = 20000;
-    private static final int YEARLY_BASE_PRICE = 200000;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String planName;
+
+
 
     @Column(nullable = false)
     private Integer price;
@@ -37,28 +36,22 @@ public class Plan extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BillingInterval billingInterval;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PlanLevel planLevel;
 
     private String description;
 
+    private String content;
+
     public Plan(
             String planName,
-            PlanLevel planLevel,
+            Integer price,
             BillingInterval billingInterval,
-            String description
+            String description,
+            String content
     ) {
         this.planName = planName;
-        this.planLevel = planLevel;
+        this.price = price;
         this.billingInterval = billingInterval;
         this.description = description;
-        this.price = calculatePrice();
-    }
-
-    public int calculatePrice() {
-        int basePrice = billingInterval == BillingInterval.YEARLY ? YEARLY_BASE_PRICE : MONTHLY_BASE_PRICE;
-        return basePrice + planLevel.getAdditionalAmount();
+        this.content=content;
     }
 }
