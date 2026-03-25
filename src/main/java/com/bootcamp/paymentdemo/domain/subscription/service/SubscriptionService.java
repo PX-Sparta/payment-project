@@ -37,11 +37,11 @@ public class SubscriptionService {
 
         if (subscription.getStatus() == SubscriptionStatus.CANCELED) {
             throw new IllegalStateException("해지된 구독은 다시 활성화할 수 없습니다.");
+
         }
         if(subscription.getStatus()==SubscriptionStatus.BAN){
             throw new IllegalArgumentException("차단된 사용자입니다. 고객센터에 문의하세요");
         }
-
         subscription.activate();
     }
 
@@ -75,6 +75,7 @@ public class SubscriptionService {
 
         subscription.activate();
     }
+
 
     // PAST_DUE(결제 연체) -> 기간 7일 이내 잔금 지불 안함 -> BAN(사용자 차단)
     @Transactional
@@ -225,7 +226,6 @@ public class SubscriptionService {
                 )
         );
 
-        // 바로 사용자를 벤으로 처리.
         subscription.ban();
     }
 
