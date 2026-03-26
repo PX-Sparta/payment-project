@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "unique_subscription_scheduled_date",
-                        columnNames = {"subscription2_id", "scheduled_date"} // 이 두 조합은 유일해야 함
+                        columnNames = {"subscription_id", "scheduled_date"} // 이 두 조합은 유일해야 함
                 )
         }
 )
@@ -29,7 +29,7 @@ public class SubscriptionBilling {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subscription2_id")
+    @JoinColumn(name = "subscription_id")
     private Subscription subscription;
 
     private Long amount;

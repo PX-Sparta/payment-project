@@ -10,11 +10,13 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "subscriptions2", indexes = {
+@Table(name = "subscriptions", indexes = {
         @Index(name = "idx_subscription_next_billing", columnList = "nextBillingDate, status")
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 public class Subscription extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,17 +27,18 @@ public class Subscription extends BaseEntity {
     private Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plan2_id")
+    @JoinColumn(name = "plan_id")
     private SubscriptionPlan plan;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "payment_method2_id")
+    @JoinColumn(name = "payment_method_id")
     private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
     private SubscriptionStatus status; // PENDING(빌링키 발급 이후 1차저장), ACTIVE(결제 완료 후 2차저장), PAST_DUE(미납), CANCELED(해지)
 
     private LocalDateTime nextBillingDate;  // 다음 결제일 <- 스케줄러 활용
+    private LocalDateTime trialEndDate;  // 체험 종료일
 
     @Builder
     public Subscription(Customer customer, SubscriptionPlan plan, PaymentMethod paymentMethod, SubscriptionStatus status) {
