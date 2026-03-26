@@ -70,7 +70,7 @@ public class Payment extends BaseEntity {
                 payment.pgAmount = totalAmount - usePoint;
                 payment.paymentId = paymentId;
                 payment.status = PaymentStatus.READY;
-                payment.expiresAt= LocalDateTime.now().plusMinutes(10);
+                payment.expiresAt= LocalDateTime.now().plusMinutes(1);
                 return payment;
         }
 
