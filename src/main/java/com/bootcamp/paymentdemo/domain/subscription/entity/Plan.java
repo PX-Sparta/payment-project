@@ -41,6 +41,10 @@ public class Plan extends BaseEntity {
 
     private String content;
 
+    // 오류 조치용 db에 해당 컬럼이 추가되야 한다고 함.
+    @Column(name = "trial_period_days", nullable = false)
+    private Integer trialPeriodDays = 0;
+
     public Plan(
             String planName,
             Integer price,

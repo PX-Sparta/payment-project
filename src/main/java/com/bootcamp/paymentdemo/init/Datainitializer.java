@@ -150,6 +150,7 @@ public class Datainitializer implements CommandLineRunner {
                 BillingInterval.YEARLY,
                 "VIP 연간 구독 플랜",
                 "가장 큰 혜택과 프리미엄 서비스를 연간으로 가장 효율적으로 이용할 수 있는 VIP 연간 구독 플랜"
+
         ));
     }
 }
