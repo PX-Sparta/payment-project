@@ -109,8 +109,8 @@ public class Datainitializer implements CommandLineRunner {
                 .billingInterval(BillingInterval.MONTHLY)
                 .interval(BillingInterval.MONTHLY)
                 .level(PlanLevel.BASIC)
-                .description("베이직 월간 구독 플랜")
-                .content("필수 기능을 부담 없는 가격으로 이용할 수 있는 베이직 월간 구독 플랜")
+                .description("베이직 구독 플랜")
+                .content("필수 기능을 부담 없는 가격으로 이용할 수 있는 베이직 구독 플랜")
                 .build());
 
         subscriptionPlanRepository.save(SubscriptionPlan.builder()
@@ -120,8 +120,8 @@ public class Datainitializer implements CommandLineRunner {
                 .billingInterval(BillingInterval.MONTHLY)
                 .interval(BillingInterval.MONTHLY)
                 .level(PlanLevel.STANDARD)
-                .description("스탠다드 연간 구독 플랜")
-                .content("더 많은 기능과 높은 만족도를 연간 혜택으로 누릴 수 있는 스탠다드 연간 구독 플랜")
+                .description("스탠다드 구독 플랜")
+                .content("더 많은 기능과 높은 만족도를 혜택으로 누릴 수 있는 스탠다드 구독 플랜")
                 .build());
 
         subscriptionPlanRepository.save(SubscriptionPlan.builder()
@@ -131,8 +131,8 @@ public class Datainitializer implements CommandLineRunner {
                 .billingInterval(BillingInterval.MONTHLY)
                 .interval(BillingInterval.MONTHLY)
                 .level(PlanLevel.VIP)
-                .description("VIP 연간 구독 플랜")
-                .content("모든 프리미엄 혜택과 최상의 서비스를 경험할 수 있는 VIP 월간 구독 플랜")
+                .description("VIP 구독 플랜")
+                .content("모든 프리미엄 혜택과 최상의 서비스를 경험할 수 있는 VIP 구독 플랜")
                 .build());
     }
 }

@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -204,6 +205,7 @@ public class SubscriptionService {
         if (isSuccess) {
             billing.markRequested(paymentId);
             sub.activate();
+
             // 상태를 REQUESTED로 변경 (웹훅 대기)
         } else {
             billing.setPaymentId(paymentId);
@@ -419,9 +421,16 @@ public class SubscriptionService {
 
         List<SubscriptionBilling> history = billingRepository.findAllBySubscriptionIdOrderByScheduledDateDesc(subscriptionId);
 
-        return history.stream()
-                .map(BillingHistoryResponse::fromEntity)
-                .toList();
+        List<BillingHistoryResponse> responseList = new ArrayList<>();
+
+        // 3. for-each 문을 돌면서 엔티티를 DTO로 변환해 리스트에 추가합니다.
+        for (SubscriptionBilling billing : history) {
+            BillingHistoryResponse dto = BillingHistoryResponse.fromEntity(billing);
+            responseList.add(dto);
+        }
+
+        // 4. 결과 리스트를 반환합니다.
+        return responseList;
     }
 
     // 공통 보안 체크 로직

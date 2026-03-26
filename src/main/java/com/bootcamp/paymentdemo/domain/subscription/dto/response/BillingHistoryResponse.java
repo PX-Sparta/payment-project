@@ -36,7 +36,7 @@ public class BillingHistoryResponse {
                 .periodStart(periodStart)
                 .periodEnd(periodEnd)
                 .scheduledDate(entity.getScheduledDate())
-                .attemptDate(entity.getCreatedAt())
+                .attemptDate(entity.getAttemptDate())
                 .amount(entity.getAmount())
                 .status(resolveStatus(entity))
                 .paymentId(entity.getPaymentId())
