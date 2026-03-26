@@ -75,7 +75,7 @@ public class PortOneApiClient {
             return body;
 
         } catch (ResourceAccessException e) {
-            // 네트워크 단절/타임아웃 계열: 재시도 대상
+            // 네트워크 단절/타k임아웃 계열: 재시도 대상
             log.error("포트원 결제 단건조회 네트워크 오류 - paymentId={}, message={}", paymentId, e.getMessage(), e);
             throw new PortOneApiException("포트원 결제 조회 네트워크 오류", true);
         } catch (RestClientResponseException e) {
@@ -219,7 +219,7 @@ public class PortOneApiClient {
 
         // 최소 요청 바디만 직접 구성
         String requestBody = String.format(
-                "{\"billingKey\":\"%s\",\"orderName\":\"월간 정기 구독\",\"amount\":{\"total\":%d}}",
+                "{\"billingKey\":\"%s\",\"orderName\":\"월간 정기 구독\",\"amount\":{\"total\":%d},\"currency\":\"KRW\"}",
                 billingKey, amount
         );
 
