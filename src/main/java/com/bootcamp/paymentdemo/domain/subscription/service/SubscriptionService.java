@@ -51,10 +51,6 @@ public class SubscriptionService {
         BillingContext context = savePendingSubscription(customerId, planId, request);
         log.info("[구독프로세스 2단계] DB 저장 완료 - subId: {}, billingId: {}", context.subscriptionId(), context.billingId());
 
-        if (context.amount() == 0) {
-            log.info("[구독프로세스 종료] 체험판 무료 구독 완료");
-            return context.subscriptionId();
-        }
 
         // 2. 포트원 API 호출 단계
         String paymentId = "SUB_" + context.billingId() + "_" + UUID.randomUUID().toString().substring(0, 8);
