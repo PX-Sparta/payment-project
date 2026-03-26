@@ -132,54 +132,76 @@
             <!-- 주문 상세 조회 -->
             <div class="card" style="margin-top: 1.5rem;">
                 <div class="card-header">주문 상세 조회</div>
-                <div class="card-subtitle">주문 ID와 상품 ID로 주문 내 상품 상세 정보를 조회합니다</div>
+                <div class="card-subtitle">주문 ID로 주문 내 상품 목록을 조회합니다</div>
                 <div class="card-body">
                     <div style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
                         <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                             <label class="form-label">주문 ID (Order ID)</label>
                             <input type="text" id="order-detail-orderId" class="form-input" placeholder="주문 ID 입력">
                         </div>
-                        <div class="form-group" style="flex: 1; min-width: 140px; margin-bottom: 0;">
-                            <label class="form-label">상품 ID (Product ID)</label>
-                            <input type="number" id="order-detail-productId" class="form-input" placeholder="상품 ID 입력">
-                        </div>
-                        <button class="btn btn-secondary" style="height: fit-content;" onclick="lookupOrderItem()">
+                        <button class="btn btn-secondary" style="height: fit-content;" onclick="lookupOrderItems()">
                             조회
                         </button>
                     </div>
                     <div id="order-detail-result" style="display: none; margin-top: 1rem;">
                         <table style="width: 100%; border-collapse: collapse;">
-                            <tbody>
-                                <tr style="border-bottom: 1px solid var(--border);">
-                                    <td style="padding: 0.5rem; font-weight: 600; width: 120px; color: var(--text-secondary);">주문 번호</td>
-                                    <td id="od-orderNumber" style="padding: 0.5rem;"></td>
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border); background: var(--bg-secondary);">
+                                    <th style="padding: 0.5rem; text-align: left;">상품명</th>
+                                    <th style="padding: 0.5rem; text-align: right;">단가</th>
+                                    <th style="padding: 0.5rem; text-align: center;">수량</th>
+                                    <th style="padding: 0.5rem; text-align: right;">합계</th>
                                 </tr>
-                                <tr style="border-bottom: 1px solid var(--border);">
-                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">주문 ID</td>
-                                    <td id="od-orderId" style="padding: 0.5rem; font-family: monospace;"></td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid var(--border);">
-                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">상품명</td>
-                                    <td id="od-productName" style="padding: 0.5rem;"></td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid var(--border);">
-                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">단가</td>
-                                    <td id="od-price" style="padding: 0.5rem;"></td>
-                                </tr>
-                                <tr style="border-bottom: 1px solid var(--border);">
-                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">수량</td>
-                                    <td id="od-quantity" style="padding: 0.5rem;"></td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">아이템 합계</td>
-                                    <td id="od-itemTotalAmount" style="padding: 0.5rem; font-weight: 600; color: var(--primary);"></td>
-                                </tr>
-                            </tbody>
+                            </thead>
+                            <tbody id="order-items-body"></tbody>
                         </table>
                     </div>
                     <div id="order-detail-empty" style="display: none; margin-top: 1rem; text-align: center; padding: 1rem; color: var(--text-secondary);">
                         주문 상세 정보를 찾을 수 없습니다.
                     </div>
+                </div>
+            </div>
+
+            <!-- 아이템 상세 모달 -->
+            <div id="item-detail-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;">
+                <div style="background: var(--bg-primary); border: 4px solid var(--border-strong); padding: var(--spacing-lg); max-width: 450px; width: 90%; box-shadow: var(--shadow-lg);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="margin: 0;">상품 상세 정보</h3>
+                        <button onclick="closeItemModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+                    </div>
+                    <div id="item-modal-loading" style="text-align: center; padding: 2rem; color: var(--text-secondary);">로딩 중...</div>
+                    <table id="item-modal-content" style="width: 100%; border-collapse: collapse; display: none;">
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 0.5rem; font-weight: 600; width: 100px; color: var(--text-secondary);">주문 번호</td>
+                                <td id="modal-orderNumber" style="padding: 0.5rem;"></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">주문 ID</td>
+                                <td id="modal-orderId" style="padding: 0.5rem; font-family: monospace;"></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">상품 ID</td>
+                                <td id="modal-productId" style="padding: 0.5rem;"></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">상품명</td>
+                                <td id="modal-productName" style="padding: 0.5rem;"></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">단가</td>
+                                <td id="modal-price" style="padding: 0.5rem;"></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid var(--border);">
+                                <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">수량</td>
+                                <td id="modal-quantity" style="padding: 0.5rem;"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0.5rem; font-weight: 600; color: var(--text-secondary);">아이템 합계</td>
+                                <td id="modal-itemTotalAmount" style="padding: 0.5rem; font-weight: 600; color: var(--primary);"></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -441,7 +463,7 @@
                     currency: 'KRW',
                     payMethod: 'CARD',
                     customer: {
-                        customerId: String(currentUser.customerUid), // PortOne에 전달할 고객 UID
+                        customerId: String(currentUser.customerUid),  // PortOne에 전달할 고객 UID
                         fullName: currentUser.name,
                         phoneNumber: currentUser.phoneNumber || '01012345678',  // KG 이니시스 필수
                         email: currentUser.email
@@ -527,13 +549,12 @@
             return texts[status] || status;
         }
 
-        // 주문 상세 조회
-        async function lookupOrderItem() {
+        // 주문 아이템 목록 조회
+        async function lookupOrderItems() {
             const orderId = document.getElementById('order-detail-orderId').value.trim();
-            const productId = document.getElementById('order-detail-productId').value.trim();
 
-            if (!orderId || !productId) {
-                showNotification('주문 ID와 상품 ID를 모두 입력해주세요', 'warning');
+            if (!orderId) {
+                showNotification('주문 ID를 입력해주세요', 'warning');
                 return;
             }
 
@@ -543,34 +564,83 @@
             emptyEl.style.display = 'none';
 
             try {
-                const data = await makeApiRequest('get-order-item', {
-                    pathParams: { orderId: orderId, productId: productId }
+                const items = await makeApiRequest('list-order-items', {
+                    pathParams: { orderId: orderId }
                 });
 
-                document.getElementById('od-orderNumber').textContent = data.orderNumber || '-';
-                document.getElementById('od-orderId').textContent = data.orderId || orderId;
-                document.getElementById('od-productName').textContent = data.productName || '-';
-                document.getElementById('od-price').textContent =
-                    data.price != null ? data.price.toLocaleString() + '원' : '-';
-                document.getElementById('od-quantity').textContent = data.quantity || '-';
-                document.getElementById('od-itemTotalAmount').textContent =
-                    data.itemTotalAmount != null ? data.itemTotalAmount.toLocaleString() + '원' : '-';
+                if (!items || items.length === 0) {
+                    emptyEl.style.display = 'block';
+                    return;
+                }
+
+                const tbody = document.getElementById('order-items-body');
+                tbody.innerHTML = items.map(item => `
+                    <tr style="border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s;"
+                        onmouseover="this.style.background='var(--bg-secondary)'"
+                        onmouseout="this.style.background=''"
+                        onclick="openItemDetail('${orderId}', ${item.productId})">
+                        <td style="padding: 0.5rem;">${item.productName}</td>
+                        <td style="padding: 0.5rem; text-align: right;">${item.price.toLocaleString()}원</td>
+                        <td style="padding: 0.5rem; text-align: center;">${item.quantity}</td>
+                        <td style="padding: 0.5rem; text-align: right; font-weight: 600; color: var(--primary);">${item.itemTotalAmount.toLocaleString()}원</td>
+                    </tr>
+                `).join('');
 
                 resultEl.style.display = 'block';
             } catch (error) {
-                console.error('주문 상세 조회 실패:', error);
+                console.error('주문 아이템 목록 조회 실패:', error);
                 emptyEl.style.display = 'block';
             }
         }
 
-        // 주문 목록에서 상세 조회 자동 입력
+        // 아이템 상세 모달 열기
+        async function openItemDetail(orderId, productId) {
+            const modal = document.getElementById('item-detail-modal');
+            const loading = document.getElementById('item-modal-loading');
+            const content = document.getElementById('item-modal-content');
+
+            modal.style.display = 'flex';
+            loading.style.display = 'block';
+            content.style.display = 'none';
+
+            try {
+                const data = await makeApiRequest('get-order-item', {
+                    pathParams: { orderId: orderId, productId: productId }
+                });
+
+                document.getElementById('modal-orderNumber').textContent = data.orderNumber || '-';
+                document.getElementById('modal-orderId').textContent = data.orderId || orderId;
+                document.getElementById('modal-productId').textContent = data.productId || productId;
+                document.getElementById('modal-productName').textContent = data.productName || '-';
+                document.getElementById('modal-price').textContent =
+                    data.price != null ? data.price.toLocaleString() + '원' : '-';
+                document.getElementById('modal-quantity').textContent = data.quantity || '-';
+                document.getElementById('modal-itemTotalAmount').textContent =
+                    data.itemTotalAmount != null ? data.itemTotalAmount.toLocaleString() + '원' : '-';
+
+                loading.style.display = 'none';
+                content.style.display = 'table';
+            } catch (error) {
+                console.error('아이템 상세 조회 실패:', error);
+                loading.textContent = '상세 정보를 불러올 수 없습니다.';
+            }
+        }
+
+        // 모달 닫기
+        function closeItemModal() {
+            document.getElementById('item-detail-modal').style.display = 'none';
+        }
+
+        // 모달 바깥 클릭 시 닫기
+        document.getElementById('item-detail-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeItemModal();
+        });
+
+        // 주문 목록에서 상세 조회 자동 실행
         function viewOrderDetail(orderId) {
             document.getElementById('order-detail-orderId').value = orderId;
-            document.getElementById('order-detail-productId').value = '';
-            document.getElementById('order-detail-productId').focus();
-
-            // 주문 상세 섹션으로 스크롤
             document.getElementById('order-detail-orderId').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            lookupOrderItems();
         }
 
         // 결제 요약 조회
