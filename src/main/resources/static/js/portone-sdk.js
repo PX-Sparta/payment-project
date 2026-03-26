@@ -249,10 +249,10 @@ async function issuePortOneBillingKey(billingKeyData) {
         const billingKeyRequest = {
             storeId: portoneConfig.storeId,
             channelKey: channelKey,
-            billingKeyMethod: billingKeyData.billingKeyMethod || 'CARD',
+            billingKeyMethod: billingKeyData.billingKeyMethod || 'EASY_PAY',
             method: {
-                card: {
-                    credential: {}
+                easyPay: {
+                    easyPayProvider: 'TOSSPAY'
                 }
             },
             issueId: billingKeyData.issueId || `billing_${Date.now()}`,
