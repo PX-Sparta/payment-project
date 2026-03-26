@@ -180,13 +180,32 @@
                             <button class="quantity-btn" onclick="updateQuantity('${product.id}', -1)"
                                 ${product.stock === 0 ? 'disabled' : ''}>-</button>
                             <input type="number" class="quantity-input" id="qty-${product.id}"
-                                value="0" min="0" max="${product.stock}" readonly>
+                                value="0" min="0" max="${product.stock}"
+                                onchange="handleQuantityInput('${product.id}', this.value)">
                             <button class="quantity-btn" onclick="updateQuantity('${product.id}', 1)"
                                 ${product.stock === 0 ? 'disabled' : ''}>+</button>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        function handleQuantityInput(productId, value) {
+            const product = products.find(p => String(p.id) === String(productId));
+            if (!product) return;
+
+            const input = document.getElementById(`qty-${productId}`);
+            let qty = parseInt(value) || 0;
+
+            if (qty < 0) qty = 0;
+            if (qty > product.stock) {
+                showNotification(`⚠️ 재고가 ${product.stock}개만 남았습니다`, 'warning');
+                qty = product.stock;
+            }
+
+            input.value = qty;
+            cart[productId] = qty;
+            updateCartSummary();
         }
 
         function updateQuantity(productId, delta) {

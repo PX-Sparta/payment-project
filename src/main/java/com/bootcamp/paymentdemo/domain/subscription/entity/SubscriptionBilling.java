@@ -1,5 +1,6 @@
 package com.bootcamp.paymentdemo.domain.subscription.entity;
 
+import com.bootcamp.paymentdemo.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -23,7 +24,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 @AllArgsConstructor
-public class SubscriptionBilling {
+public class SubscriptionBilling extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -33,6 +34,7 @@ public class SubscriptionBilling {
     private Subscription subscription;
 
     private Long amount;
+
     private String paymentId;
 
     @CreatedDate // Spring Data JPA 사용 시
@@ -40,6 +42,8 @@ public class SubscriptionBilling {
     private LocalDateTime createdAt;
 
     private LocalDateTime scheduledDate;
+
+    private LocalDateTime attemptDate;
 
     @Enumerated(EnumType.STRING)
     private BillingStatus status; // READY(시도전), SUCCESS(성공), FAILED(실패)
@@ -64,7 +68,8 @@ public class SubscriptionBilling {
 
     public void markRequested(String paymentId) {
         this.status = BillingStatus.REQUESTED;
-        this.paymentId = paymentId; // 👈 나중에 웹훅(confirm)에서 이 ID로 찾아야 함!
+        this.paymentId = paymentId;
+        this.attemptDate = LocalDateTime.now();
     }
 
     public boolean isCompleted() {
