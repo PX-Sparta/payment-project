@@ -3,7 +3,11 @@ package com.bootcamp.paymentdemo.domain.subscription.service;
 
 import com.bootcamp.paymentdemo.domain.customer.entity.Customer;
 import com.bootcamp.paymentdemo.domain.customer.repository.CustomerRepository;
+import com.bootcamp.paymentdemo.domain.payment.dto.Request.PaymentMethodCreateRequest;
+import com.bootcamp.paymentdemo.domain.payment.entity.PaymentMethod;
 import com.bootcamp.paymentdemo.domain.payment.enums.PaymentMethodStatus;
+import com.bootcamp.paymentdemo.domain.payment.enums.PgProvider;
+import com.bootcamp.paymentdemo.domain.payment.repository.PaymentMethodRepository;
 import com.bootcamp.paymentdemo.domain.payment.service.PortOneApiClient;
 import com.bootcamp.paymentdemo.domain.subscription.dto.BillingContext;
 import com.bootcamp.paymentdemo.domain.subscription.dto.response.CreateBillingResponse;
@@ -11,7 +15,6 @@ import com.bootcamp.paymentdemo.domain.subscription.dto.request.SubscriptionRequ
 import com.bootcamp.paymentdemo.domain.subscription.dto.response.BillingHistoryResponse;
 import com.bootcamp.paymentdemo.domain.subscription.dto.response.SubscriptionResponse;
 import com.bootcamp.paymentdemo.domain.subscription.entity.*;
-import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionPaymentMethodRepository;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionBillingRepository;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionPlanRepository;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionRepository;
@@ -33,7 +36,7 @@ public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
-    private final SubscriptionPaymentMethodRepository subscriptionPaymentMethodRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
     private final SubscriptionBillingRepository billingRepository;
     private final PortOneApiClient portOneApiClient;
     private final CustomerRepository customerRepository;
@@ -95,26 +98,25 @@ public class SubscriptionService {
            SubscriptionPlan plan = subscriptionPlanRepository.findById(planId)
                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 플랜입니다."));
 
-           // 2. 결제 수단(카드 정보) 저장
-           // 기존에 설정된 기본 카드가 있다면 해제 (정합성)
-           subscriptionPaymentMethodRepository.findByCustomerIdAndIsDefaultTrue(customerId)
-                   .ifPresent(SubscriptionPaymentMethod::unsetDefault);
-
-           SubscriptionPaymentMethod method = SubscriptionPaymentMethod.builder()
-                   .customerId(customerId)
-                   .billingKey(request.getBillingKey())
-                   .customerUid(request.getCustomerUid())
-                   .cardBrand(request.getCardBrand())
-                   .last4(request.getLast4())
-                   .isDefault(true)
-                   .status(PaymentMethodStatus.ACTIVE)
-                   .build();
-           subscriptionPaymentMethodRepository.save(method);
-
-           // 3. 구독 정보 생성 (PENDING 상태)
-
            Customer customer = customerRepository.findById(customerId)
                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+
+           // 2. 결제 수단(카드 정보) 저장
+           // 기존에 설정된 기본 카드가 있다면 해제 (정합성)
+           paymentMethodRepository.findByCustomerIdAndIsDefaultTrue(customerId)
+                   .ifPresent(PaymentMethod::unsetDefault); // 👈 이제 에러 없이 작동합니다!
+
+            // create 메서드 인자인 PaymentMethodCreateRequest를 만들어줘야 합니다.
+           PaymentMethodCreateRequest methodRequest = new PaymentMethodCreateRequest(
+                   request.getBillingKey(),
+                   request.getCustomerUid(),
+                   PgProvider.TOSS_PAYMENTS, // Enum 타입 확인 필요
+                   true
+           );
+
+           PaymentMethod method = PaymentMethod.create(customer, methodRequest);
+           paymentMethodRepository.save(method);
+           // 3. 구독 정보 생성 (PENDING 상태)
 
            Subscription subscription = Subscription.builder()
                    .customer(customer)
