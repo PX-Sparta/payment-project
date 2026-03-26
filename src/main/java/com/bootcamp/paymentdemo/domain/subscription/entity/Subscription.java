@@ -2,6 +2,7 @@ package com.bootcamp.paymentdemo.domain.subscription.entity;
 
 
 import com.bootcamp.paymentdemo.domain.customer.entity.Customer;
+import com.bootcamp.paymentdemo.domain.payment.entity.PaymentMethod;
 import com.bootcamp.paymentdemo.global.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,8 +15,6 @@ import java.time.LocalDateTime;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
-@AllArgsConstructor
 public class Subscription extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,13 +30,21 @@ public class Subscription extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_method2_id")
-    private SubscriptionPaymentMethod paymentMethod;
+    private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
     private SubscriptionStatus status; // PENDING(빌링키 발급 이후 1차저장), ACTIVE(결제 완료 후 2차저장), PAST_DUE(미납), CANCELED(해지)
 
     private LocalDateTime nextBillingDate;  // 다음 결제일 <- 스케줄러 활용
     private LocalDateTime trialEndDate;  // 체험 종료일
+
+    @Builder
+    public Subscription(Customer customer, SubscriptionPlan plan, PaymentMethod paymentMethod, SubscriptionStatus status) {
+        this.customer = customer;
+        this.plan = plan;
+        this.paymentMethod = paymentMethod;
+        this.status = status;
+    }
 
     public void updateStatus(SubscriptionStatus subscriptionStatus) {
         this.status = subscriptionStatus;
