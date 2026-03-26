@@ -1,6 +1,7 @@
 package com.bootcamp.paymentdemo.domain.payment.service;
 
 import com.bootcamp.paymentdemo.config.PortOneProperties;
+import com.bootcamp.paymentdemo.domain.payment.dto.Response.PortOneCancelResponse;
 import com.bootcamp.paymentdemo.domain.payment.dto.Response.PortOnePaymentInfoResponse;
 import com.bootcamp.paymentdemo.global.error.PortOneApiException;
 import lombok.RequiredArgsConstructor;
@@ -149,21 +150,22 @@ public class PortOneApiClient {
                     reason,
                     mask(portOneProperties.getStore().getId()),
                     mask(portOneProperties.getApi().getSecret()));
-            ResponseEntity<PortOnePaymentInfoResponse> response = restTemplate.exchange(
+            ResponseEntity<PortOneCancelResponse> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
                     entity,
-                    PortOnePaymentInfoResponse.class
+                    PortOneCancelResponse.class
             );
 
-            PortOnePaymentInfoResponse responseBody = response.getBody();
+            PortOneCancelResponse responseBody = response.getBody();
             if (responseBody == null) {
                 throw new IllegalArgumentException("포트원 결제 취소 응답이 비어 있습니다.");
             }
 
+            PortOnePaymentInfoResponse resolvedPaymentInfo = finalizeCancelResponse(paymentId, amount, responseBody);
             log.info("포트원 결제 취소 성공 - paymentId={}, status={}, amount={}",
-                    paymentId, responseBody.getStatus(), responseBody.resolveTotalAmount());
-            return responseBody;
+                    paymentId, resolvedPaymentInfo.getStatus(), resolvedPaymentInfo.resolveTotalAmount());
+            return resolvedPaymentInfo;
 
         } catch (ResourceAccessException e) {
             // 네트워크 단절/타임아웃 계열: 재시도 대상
@@ -261,6 +263,26 @@ public class PortOneApiClient {
             log.warn("포트원 취소 후 상태 재조회 실패 - paymentId={}, message={}", paymentId, e.getMessage());
             return null;
         }
+    }
+
+    private PortOnePaymentInfoResponse finalizeCancelResponse(
+            String paymentId,
+            Long amount,
+            PortOneCancelResponse cancelResponse
+    ) {
+        String cancellationStatus = cancelResponse.resolveCancellationStatus();
+        PortOnePaymentInfoResponse paymentInfo = tryResolveCancelledPayment(paymentId);
+        log.info("포트원 결제 취소 응답 파싱 - paymentId={}, cancellationStatus={}, cancellationAmount={}, recheckStatus={}",
+                paymentId,
+                cancellationStatus,
+                cancelResponse.resolveCancellationAmount() != null ? cancelResponse.resolveCancellationAmount() : amount,
+                paymentInfo == null ? "<recheck-failed>" : paymentInfo.getStatus());
+
+        if (paymentInfo != null) {
+            return paymentInfo;
+        }
+
+        return PortOnePaymentInfoResponse.ofCancellation(cancellationStatus, cancelResponse.resolveCancellationAmount());
     }
 
     private String mask(String value) {
