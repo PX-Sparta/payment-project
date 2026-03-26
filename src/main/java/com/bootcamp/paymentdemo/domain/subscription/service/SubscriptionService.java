@@ -156,7 +156,6 @@ public class SubscriptionService {
                     subscription.getId(), subscription.getStatus());
 
             // 4. 구독 청구(Billing) 로그 생성 (READY 상태)
-            // 💡 피드백 반영: 중복 결제 방지를 위해 여기서 멱등성 체크를 먼저 해도 좋습니다.
             // 4. Billing 저장
             SubscriptionBilling savedBilling = billingRepository.save(
                     SubscriptionBilling.builder()
@@ -195,7 +194,8 @@ public class SubscriptionService {
 
         if (isSuccess) {
             billing.markRequested(paymentId);
-            sub.activate();
+            activateSubscription(subId);
+//            sub.activate();
 
             // 상태를 REQUESTED로 변경 (웹훅 대기)
         } else {
