@@ -51,6 +51,16 @@ public class PortOnePaymentInfoResponse {
         private Long total;
     }
 
+    public static PortOnePaymentInfoResponse ofCancellation(String cancellationStatus, Long cancellationAmount) {
+        PortOnePaymentInfoResponse response = new PortOnePaymentInfoResponse();
+        response.status = mapCancellationStatus(cancellationStatus);
+        response.amountTotal = cancellationAmount;
+        response.message = cancellationStatus == null
+                ? "포트원 취소 응답 상태 없음"
+                : "포트원 취소 응답 상태=" + cancellationStatus;
+        return response;
+    }
+
 
     public Long resolveTotalAmount() {
         if (amount != null && amount.getTotal() != null) {
@@ -91,5 +101,17 @@ public class PortOnePaymentInfoResponse {
             return message;
         }
         return "포트원에서 실패 사유를 제공하지 않았습니다.";
+    }
+
+    private static String mapCancellationStatus(String cancellationStatus) {
+        if (cancellationStatus == null) {
+            return null;
+        }
+        return switch (cancellationStatus.toUpperCase()) {
+            case "SUCCEEDED" -> "CANCELLED";
+            case "REQUESTED" -> "REQUESTED";
+            case "FAILED" -> "FAILED";
+            default -> cancellationStatus;
+        };
     }
 }
