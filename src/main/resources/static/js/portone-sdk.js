@@ -342,6 +342,10 @@ async function confirmPaymentTemplate(paymentId) {
             pathParams: paymentId
         });
 
+        if (result && result.success === false) {
+            throw new Error(resolveApiFailureMessage(result, '결제 확정 실패'));
+        }
+
         showNotification('결제 확정 성공!', 'success');
         return result;
     } catch (error) {
@@ -362,6 +366,10 @@ async function cancelPaymentTemplate(paymentId, reason = 'Customer request') {
                 reason: reason
             }
         });
+
+        if (result && result.success === false) {
+            throw new Error(resolveApiFailureMessage(result, '결제 취소 실패'));
+        }
 
         showNotification('결제 취소 성공!', 'success');
         return result;
