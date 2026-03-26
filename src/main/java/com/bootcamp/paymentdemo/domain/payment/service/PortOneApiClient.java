@@ -50,6 +50,12 @@ public class PortOneApiClient {
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
+        log.info("포트원 결제 단건조회 요청 - paymentId={}, url={}, storeIdMask={}, secretMask={}",
+                paymentId,
+                url,
+                mask(portOneProperties.getStore().getId()),
+                mask(portOneProperties.getApi().getSecret()));
+
         try {
             ResponseEntity<PortOnePaymentInfoResponse> response = restTemplate.exchange(
                     url,
