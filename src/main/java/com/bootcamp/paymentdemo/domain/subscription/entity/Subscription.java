@@ -36,7 +36,6 @@ public class Subscription extends BaseEntity {
     private SubscriptionStatus status; // PENDING(빌링키 발급 이후 1차저장), ACTIVE(결제 완료 후 2차저장), PAST_DUE(미납), CANCELED(해지)
 
     private LocalDateTime nextBillingDate;  // 다음 결제일 <- 스케줄러 활용
-    private LocalDateTime trialEndDate;  // 체험 종료일
 
     @Builder
     public Subscription(Customer customer, SubscriptionPlan plan, PaymentMethod paymentMethod, SubscriptionStatus status) {

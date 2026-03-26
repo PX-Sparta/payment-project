@@ -15,7 +15,6 @@ import com.bootcamp.paymentdemo.domain.subscription.dto.request.SubscriptionRequ
 import com.bootcamp.paymentdemo.domain.subscription.dto.response.BillingHistoryResponse;
 import com.bootcamp.paymentdemo.domain.subscription.dto.response.SubscriptionResponse;
 import com.bootcamp.paymentdemo.domain.subscription.entity.*;
-import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionPaymentMethodRepository;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionBillingRepository;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionPlanRepository;
 import com.bootcamp.paymentdemo.domain.subscription.repository.SubscriptionRepository;

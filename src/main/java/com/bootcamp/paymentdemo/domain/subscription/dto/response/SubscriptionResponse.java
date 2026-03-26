@@ -33,7 +33,6 @@ public class SubscriptionResponse {
                 .status(entity.getStatus().name())
                 .amount(entity.getPlan().getPrice())
                 .currentPeriodEnd(entity.getNextBillingDate())
-                .last4(entity.getPaymentMethod().getLast4())
                 .build();
     }
 }
