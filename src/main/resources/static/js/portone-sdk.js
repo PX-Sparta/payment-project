@@ -98,11 +98,22 @@ async function openPortOnePayment(paymentData) {
             });
             throw new Error(response.message);
         } else {
-            // 결제 성공
+            // 결제 성공 → 서버에 결제 확정 요청
+            console.log('3단계: 서버에 결제 확정 요청...');
+            if (response.paymentId && response.paymentId !== serverPaymentId) {
+                console.warn('SDK 응답 paymentId와 서버 생성 paymentId가 다릅니다.', {
+                    sdkPaymentId: response.paymentId,
+                    serverPaymentId
+                });
+            }
+
+            const confirmResult = await confirmPaymentTemplate(serverPaymentId);
+
             displaySuccess({
-                paymentId: response.paymentId,
+                paymentId: serverPaymentId,
                 txId: response.txId,
-                message: '결제창 완료. 서버에서 검증하세요.'
+                message: '결제 확정 완료',
+                confirmResult: confirmResult
             });
             return response;
         }
@@ -166,6 +177,24 @@ async function openPortOnePaymentWithPoints(paymentData) {
         const finalAmount = Math.max(0, paymentData.totalAmount - pointsToUse);
         console.log(`포인트 차감: ${paymentData.totalAmount}원 - ${pointsToUse}P = ${finalAmount}원`);
 
+        if (finalAmount === 0) {
+            console.log('2단계: 0원 결제이므로 PortOne SDK를 건너뛰고 서버 확정만 수행합니다...');
+            const confirmResult = await confirmPaymentTemplate(serverPaymentId);
+
+            displaySuccess({
+                paymentId: serverPaymentId,
+                pointsUsed: pointsToUse,
+                message: '0원 포인트 결제 확정 완료',
+                confirmResult: confirmResult
+            });
+
+            return {
+                paymentId: serverPaymentId,
+                txId: null,
+                confirmResult: confirmResult
+            };
+        }
+
         // 2단계: PortOne 결제창 열기
         console.log('2단계: PortOne 결제창 열기...');
         const paymentRequest = {
@@ -206,14 +235,29 @@ async function openPortOnePaymentWithPoints(paymentData) {
             });
             throw new Error(response.message);
         } else {
-            // 결제 성공
+            // 결제 성공 → 서버에 결제 확정 요청
+            console.log('3단계: 서버에 결제 확정 요청...');
+            if (response.paymentId && response.paymentId !== serverPaymentId) {
+                console.warn('SDK 응답 paymentId와 서버 생성 paymentId가 다릅니다.', {
+                    sdkPaymentId: response.paymentId,
+                    serverPaymentId
+                });
+            }
+
+            const confirmResult = await confirmPaymentTemplate(serverPaymentId);
+
             displaySuccess({
-                paymentId: response.paymentId,
+                paymentId: serverPaymentId,
                 txId: response.txId,
                 pointsUsed: pointsToUse,
-                message: '결제창 완료 (포인트 차감). 서버에서 검증하세요.'
+                message: '결제 확정 완료',
+                confirmResult: confirmResult
             });
-            return response;
+            return {
+                paymentId: serverPaymentId,
+                txId: response.txId,
+                confirmResult: confirmResult
+            };
         }
     } catch (error) {
         console.error('결제 오류 (포인트):', error);
@@ -245,12 +289,7 @@ async function issuePortOneBillingKey(billingKeyData) {
         const billingKeyRequest = {
             storeId: portoneConfig.storeId,
             channelKey: channelKey,
-            billingKeyMethod: billingKeyData.billingKeyMethod || 'CARD',
-            method: {
-                card: {
-                    credential: {}
-                }
-            },
+            billingKeyMethod: 'CARD',
             issueId: billingKeyData.issueId || `billing_${Date.now()}`,
             issueName: billingKeyData.issueName || '정기결제 등록',
             customer: billingKeyData.customer || {
@@ -320,6 +359,10 @@ async function confirmPaymentTemplate(paymentId) {
             pathParams: paymentId
         });
 
+        if (result && result.success === false) {
+            throw new Error(resolveApiFailureMessage(result, '결제 확정 실패'));
+        }
+
         showNotification('결제 확정 성공!', 'success');
         return result;
     } catch (error) {
@@ -340,6 +383,10 @@ async function cancelPaymentTemplate(paymentId, reason = 'Customer request') {
                 reason: reason
             }
         });
+
+        if (result && result.success === false) {
+            throw new Error(resolveApiFailureMessage(result, '결제 취소 실패'));
+        }
 
         showNotification('결제 취소 성공!', 'success');
         return result;

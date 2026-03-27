@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
-    <title>플랜 - Commerce Demo</title>
+    <title>플랜 - 스파르타 황금마차</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script th:src="@{/js/cookie-util.js}"></script>
     <script th:src="@{/js/app-config.js}"></script>
@@ -16,15 +16,15 @@
 <body>
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="/" class="navbar-brand">🏪 CommerceHub</a>
+            <a href="/" class="navbar-brand"><img th:src="@{/images/sparta-logo.png}" src="/images/sparta-logo.png" alt="스파르타 황금마차" style="height: 96px;"></a>
             <ul class="navbar-nav">
-                <li><a href="/" class="nav-link">홈</a></li>
-                <li><a href="/pages/shop" class="nav-link">상점</a></li>
-                <li><a href="/pages/orders" class="nav-link">주문</a></li>
-                <li><a href="/pages/points" class="nav-link">포인트</a></li>
-                <li><a href="/pages/plans" class="nav-link active">플랜</a></li>
-                <li><a href="/pages/subscribe" class="nav-link">구독 신청</a></li>
-                <li><a href="/pages/subscriptions" class="nav-link">구독 관리</a></li>
+                <li><a href="/" class="nav-link">마차 입구</a></li>
+                <li><a href="/pages/shop" class="nav-link">메뉴판</a></li>
+                <li><a href="/pages/orders" class="nav-link">주문서</a></li>
+                <li><a href="/pages/points" class="nav-link">도장카드</a></li>
+                <li><a href="/pages/plans" class="nav-link active">단골 등급</a></li>
+                <li><a href="/pages/subscribe" class="nav-link">정기 배달</a></li>
+                <li><a href="/pages/subscriptions" class="nav-link">정기배달 관리</a></li>
             </ul>
             <div class="navbar-actions">
                 <div class="config-badge-container"></div>
@@ -35,7 +35,7 @@
 
     <div class="main-container">
         <div class="content-area">
-            <h1 style="font-size: 2rem; margin-bottom: 0.5rem; text-align: center;">⭐ 구독 플랜</h1>
+            <h1 style="font-size: 2rem; margin-bottom: 0.5rem; text-align: center;">⭐ 단골 등급</h1>
             <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem;">
                 필요에 맞는 완벽한 플랜을 선택하세요
             </p>
@@ -149,7 +149,7 @@
             container.innerHTML = plans.map((plan, index) => {
                 const isPopular = index === popularIndex && plans.length >= 3;
                 const emoji = planEmojis[plan.name?.toUpperCase()] || planEmojis[plan.planId] || '📦';
-                const features = defaultFeatures[plan.name?.toUpperCase()] || ['플랜 혜택 제공'];
+                const features = defaultFeatures[plan.name?.toUpperCase()] || [];
                 const cycleText = billingCycleText[plan.billingCycle] || '월';
                 const buttonClass = isPopular ? 'btn-primary' : 'btn-outline';
                 const cardStyle = isPopular ? 'border-color: var(--primary); border-width: 3px; transform: scale(1.05);' : '';
@@ -164,11 +164,19 @@
                         <div style="text-align: center;">
                             <div style="font-size: 3rem; margin-bottom: 1rem;">${emoji}</div>
                             <div class="card-header">${plan.name}</div>
+                            ${plan.description ? `<p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">${plan.description}</p>` : ''}
                             <div class="price">₩${plan.amount.toLocaleString()}<span style="font-size: 1rem; color: var(--text-secondary);">/${cycleText}</span></div>
                         </div>
+                        ${plan.content ? `
+                        <div style="margin: 1.5rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">
+                            ${plan.content}
+                        </div>
+                        ` : ''}
+                        ${features.length > 0 ? `
                         <ul class="features-list" style="margin: 2rem 0;">
                             ${features.map(feature => `<li class="feature-item">${feature}</li>`).join('')}
                         </ul>
+                        ` : ''}
                         <button class="btn ${buttonClass}" onclick="goToSubscribe('${plan.planId}')" style="width: 100%;">
                             ${plan.name} 선택
                         </button>

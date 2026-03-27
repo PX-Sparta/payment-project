@@ -2,9 +2,69 @@ spring:
   application:
     name: payment-demo
 
-  # 클라이언트 API 계약 설정 파일 import
+  # 1. DB 연결 설정
+  datasource:
+    url: jdbc:mysql://${RDS_HOSTNAME:localhost}:3306/payment?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # 2. JPA (엔티티 자동 생성 및 쿼리 로그) 설정
+  jpa:
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # data.sql 초기 데이터 자동 실행
+  sql:
+    init:
+      mode: always
+
+  # 3. Redis 연결 설정 (deploy.yml과 환경변수 연동)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: 6379
+      password: ${REDIS_PASSWORD:}
+
+  # 4. OAuth2 소셜 로그인 설정 (구글, 카카오)
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - profile
+              - email
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_post
+            client-name: Kakao
+            scope:
+              - profile_nickname
+              - account_email
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+
+  # 5. 기존 설정들
   config:
-    import: optional:classpath:client-api-config.yml
+    import:
+      - optional:classpath:client-api-config.yml
+      - optional:classpath:application-local.yml
 
   thymeleaf:
     cache: false
@@ -13,31 +73,27 @@ spring:
     mode: HTML
     encoding: UTF-8
 
-  security:
-    user:
-      name: demo
-      password: demo123
-
 server:
   port: 8080
-  servlet:
-    context-path: /
+  forward-headers-strategy: native
 
 # PortOne Configuration
 portone:
   api:
     base-url: https://api.portone.io
-    secret: ${PORTONE_API_SECRET:your-api-secret}
+    secret: ${PORTONE_API_SECRET:}
   store:
-    id: ${PORTONE_STORE_ID:your-store-id}
+    id: ${PORTONE_STORE_ID:}
   channel:
-    kg-inicis: ${PORTONE_CHANNEL_KG:your-kg-inicis-channel-key}
-    toss: ${PORTONE_CHANNEL_TOSS:your-toss-channel-key}
+    kg-inicis: ${PORTONE_CHANNEL_KG:}
+    toss: ${PORTONE_CHANNEL_TOSS:}
+
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:commercehub-secret-key-for-demo-please-change-this-in-production-environment}
-  token-validity-in-seconds: ${JWT_VALIDITY:86400}  # 24 hours
-
+  secret: ${JWT_SECRET_KEY:commercehub-secret-key-for-demo-please-change-this-in-production-environment}
+  access-token-expiration: 86400000
+  refresh-token-expiration: 604800000
+  refresh-token-cookie-max-age: 604800
 
 # UI Branding Configuration
 app:

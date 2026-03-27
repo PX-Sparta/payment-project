@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" th:href="@{/favicon.ico}">
+    <title>로그인 - 스파르타 황금마차</title>
+    <link rel="stylesheet" href="/css/style.css" th:href="@{/css/style.css}">
+    <script src="/js/theme.js" th:src="@{/js/theme.js}"></script>
+    <script src="/js/cookie-util.js" th:src="@{/js/cookie-util.js}"></script>
+    <script src="/js/app-config.js" th:src="@{/js/app-config.js}"></script>
+    <script src="/js/api-handler.js" th:src="@{/js/api-handler.js}"></script>
+    <script src="/js/api-validator.js" th:src="@{/js/api-validator.js}"></script>
+    <link rel="stylesheet" href="/css/alert.css" th:href="@{/css/alert.css}">
+    <script src="/js/alert.js" th:src="@{/js/alert.js}"></script>
+    <style>
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #87CEEB 0%, #B0E0FF 30%, #E8F4FD 60%, #F5E6CA 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 도트 격자 배경 */
+        .login-page::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(circle, rgba(244,196,48,0.06) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* ===== 태양 ===== */
+        .sun {
+            position: absolute;
+            top: 6%; left: 8%;
+            width: 64px; height: 64px;
+            background: #F4C430;
+            border-radius: 50%;
+            box-shadow: 0 0 40px rgba(244,196,48,0.6), 0 0 80px rgba(244,196,48,0.25);
+            z-index: 1;
+        }
+        /* 태양 광선 */
+        .sun::before {
+            content: '';
+            position: absolute; top: -12px; left: -12px;
+            width: 88px; height: 88px;
+            background: repeating-conic-gradient(rgba(244,196,48,0.3) 0deg, transparent 15deg, transparent 30deg);
+            border-radius: 50%;
+            animation: sun-spin 20s linear infinite;
+        }
+        @keyframes sun-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ===== 구름 ===== */
+        .cloud {
+            position: absolute;
+            z-index: 1;
+            opacity: 0.85;
+        }
+        /* 도트 구름 — box-shadow로 픽셀 표현 */
+        .cloud::before {
+            content: '';
+            display: block;
+            width: 8px; height: 8px;
+            background: #fff;
+            box-shadow:
+                8px 0 #fff, 16px 0 #fff, 24px 0 #fff, 32px 0 #fff,
+                -8px 8px #fff, 0 8px #fff, 8px 8px #fff, 16px 8px #fff, 24px 8px #fff, 32px 8px #fff, 40px 8px #fff,
+                -8px 16px #fff, 0 16px #fff, 8px 16px #fff, 16px 16px #fff, 24px 16px #fff, 32px 16px #fff, 40px 16px #fff,
+                0 24px #fff, 8px 24px #fff, 16px 24px #fff, 24px 24px #fff, 32px 24px #fff;
+        }
+        .cloud-1 { top: 10%; left: 25%; animation: cloud-drift 30s linear infinite; transform: scale(1.5); }
+        .cloud-2 { top: 5%; right: 20%; animation: cloud-drift 40s 5s linear infinite; transform: scale(1); }
+        .cloud-3 { top: 18%; left: 55%; animation: cloud-drift 35s 10s linear infinite; transform: scale(1.2); }
+        .cloud-4 { top: 8%; left: 70%; animation: cloud-drift 25s 15s linear infinite; transform: scale(0.8); }
+        @keyframes cloud-drift {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(80px); }
+        }
+
+        /* ===== 스파르타 건물 (뒷배경) ===== */
+        .buildings {
+            position: absolute;
+            bottom: 80px;
+            left: 0; right: 0;
+            height: 300px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* 신전 (큰 건물 — 좌측) */
+        .temple {
+            position: absolute;
+            bottom: 8px;
+            left: 2%;
+            width: 160px; height: 180px;
+            background: #D4C4A0;
+            border: 4px solid #B0A080;
+        }
+        .temple::before {
+            /* 삼각 지붕 */
+            content: '';
+            position: absolute; top: -50px; left: -10px;
+            width: 0; height: 0;
+            border-left: 90px solid transparent;
+            border-right: 90px solid transparent;
+            border-bottom: 50px solid #C4A060;
+        }
+        .temple::after {
+            /* 기둥들 */
+            content: '';
+            position: absolute; bottom: 0; left: 12px;
+            width: 16px; height: 140px;
+            background: #E8DCC8;
+            box-shadow:
+                32px 0 #E8DCC8, 64px 0 #E8DCC8, 96px 0 #E8DCC8, 128px 0 #E8DCC8;
+            border-top: 4px solid #C4A060;
+        }
+
+        /* 성벽 (중앙~우측 뒤) */
+        .wall {
+            position: absolute;
+            bottom: 8px;
+            width: 100%;
+            height: 100px;
+            background: repeating-linear-gradient(
+                90deg,
+                #C8B898 0px, #C8B898 28px,
+                #B0A080 28px, #B0A080 32px
+            );
+            border-top: 8px solid #A09070;
+        }
+        .wall::before {
+            /* 성벽 상단 요철 (배틀먼트) */
+            content: '';
+            position: absolute; top: -24px; left: 0; right: 0; height: 24px;
+            background: repeating-linear-gradient(
+                90deg,
+                #C8B898 0px, #C8B898 20px,
+                transparent 20px, transparent 32px
+            );
+        }
+
+        /* 탑 (우측) */
+        .tower {
+            position: absolute;
+            bottom: 8px;
+            right: 20%;
+            width: 60px; height: 200px;
+            background: #C8B898;
+            border: 4px solid #A09070;
+        }
+        .tower::before {
+            /* 탑 상단 요철 */
+            content: '';
+            position: absolute; top: -20px; left: -8px;
+            width: 76px; height: 20px;
+            background: repeating-linear-gradient(
+                90deg,
+                #C8B898 0px, #C8B898 14px,
+                transparent 14px, transparent 22px
+            );
+        }
+        .tower::after {
+            /* 창문 */
+            content: '';
+            position: absolute; top: 30px; left: 18px;
+            width: 24px; height: 32px;
+            background: #5A4A30;
+            border-top: 12px solid #5A4A30;
+            border-radius: 12px 12px 0 0;
+        }
+
+        /* 작은 집 */
+        .house {
+            position: absolute;
+            bottom: 8px;
+            width: 80px; height: 90px;
+            background: #D8C8A8;
+            border: 4px solid #B0A080;
+        }
+        .house::before {
+            content: '';
+            position: absolute; top: -36px; left: -6px;
+            width: 0; height: 0;
+            border-left: 46px solid transparent;
+            border-right: 46px solid transparent;
+            border-bottom: 36px solid #B87333;
+        }
+        .house::after {
+            /* 문 */
+            content: '';
+            position: absolute; bottom: 0; left: 24px;
+            width: 28px; height: 40px;
+            background: #6B4226;
+            border-top: 14px solid #6B4226;
+            border-radius: 14px 14px 0 0;
+        }
+        .house-1 { left: 22%; }
+        .house-2 { left: 42%; transform: scale(0.85); }
+        .house-3 { right: 35%; transform: scale(1.1); }
+
+        /* 깃발 */
+        .flag {
+            position: absolute;
+            bottom: 8px;
+            z-index: 2;
+        }
+        .flag::before {
+            content: '';
+            position: absolute; bottom: 0; left: 0;
+            width: 4px; height: 120px;
+            background: #6B4226;
+        }
+        .flag::after {
+            content: '';
+            position: absolute; bottom: 90px; left: 4px;
+            width: 32px; height: 24px;
+            background: #E63946;
+            border: 2px solid #C5303C;
+            animation: flag-wave 2s ease-in-out infinite;
+        }
+        @keyframes flag-wave {
+            0%, 100% { transform: skewY(0deg); }
+            50% { transform: skewY(-3deg); }
+        }
+        .flag-1 { left: 18%; }
+        .flag-2 { right: 28%; }
+
+        /* ===== 바닥 (땅) ===== */
+        .ground {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 80px;
+            background: repeating-linear-gradient(90deg, #4A8C3F 0px, #4A8C3F 16px, #3D7A34 16px, #3D7A34 32px);
+            border-top: 4px solid #2D6025;
+            z-index: 2;
+        }
+        .ground::before {
+            content: '';
+            position: absolute; top: -16px; left: 0; right: 0; height: 16px;
+            background: repeating-linear-gradient(90deg, transparent 0px, transparent 24px, #4A8C3F 24px, #4A8C3F 40px, transparent 40px, transparent 64px);
+        }
+        /* 풀 */
+        .ground::after {
+            content: '';
+            position: absolute; top: -4px; left: 0; right: 0; height: 4px;
+            background: repeating-linear-gradient(90deg, #5DAE50 0px, #5DAE50 8px, transparent 8px, transparent 20px);
+        }
+
+        /* ===== 도로 (마차가 서 있는 곳) ===== */
+        .road {
+            position: absolute; bottom: 80px; left: 0; right: 0; height: 8px;
+            background: #8B7355;
+            border-top: 2px solid #6B5A40;
+        }
+
+        /* ===== 황금마차 (우측 0~15%) ===== */
+        .wagon {
+            position: absolute;
+            right: 0;
+            bottom: 88px;
+            width: 15%;
+            display: flex;
+            justify-content: center;
+            z-index: 10;
+            animation: wagon-arrive 1.5s ease-out forwards;
+        }
+        .wagon img {
+            height: 240px;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 6px 0 rgba(0,0,0,0.4));
+        }
+        @keyframes wagon-arrive {
+            0% { transform: translateX(300px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+        .wagon-idle {
+            animation: wagon-bob 4s ease-in-out infinite;
+        }
+        @keyframes wagon-bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        /* ===== 르탄이 줄 서기 (우측 15% 이후부터) ===== */
+        .rtani-queue {
+            position: absolute;
+            bottom: 88px;
+            right: 15%;
+            left: 0;
+            z-index: 8;
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 4px;
+            align-items: flex-end;
+            padding-left: 10px;
+        }
+        .rtani {
+            image-rendering: pixelated;
+            filter: drop-shadow(0 3px 0 rgba(0,0,0,0.4));
+            flex-shrink: 0;
+        }
+        /* 30명 르탄이 — 순차 등장 + 각각 다른 바운스 */
+        .rtani-1  { height: 54px; animation: rtani-enter 0.4s 0.5s ease-out both, rtani-idle 2.0s 1.0s ease-in-out infinite; }
+        .rtani-2  { height: 48px; animation: rtani-enter 0.4s 0.7s ease-out both, rtani-idle 2.2s 1.2s ease-in-out infinite; }
+        .rtani-3  { height: 52px; animation: rtani-enter 0.4s 0.9s ease-out both, rtani-idle 1.8s 1.4s ease-in-out infinite; }
+        .rtani-4  { height: 46px; animation: rtani-enter 0.4s 1.1s ease-out both, rtani-idle 2.4s 1.6s ease-in-out infinite; }
+        .rtani-5  { height: 50px; animation: rtani-enter 0.4s 1.3s ease-out both, rtani-idle 2.0s 1.8s ease-in-out infinite; }
+        .rtani-6  { height: 44px; animation: rtani-enter 0.4s 1.5s ease-out both, rtani-idle 2.3s 2.0s ease-in-out infinite; }
+        .rtani-7  { height: 53px; animation: rtani-enter 0.4s 1.7s ease-out both, rtani-idle 1.9s 2.2s ease-in-out infinite; }
+        .rtani-8  { height: 47px; animation: rtani-enter 0.4s 1.9s ease-out both, rtani-idle 2.1s 2.4s ease-in-out infinite; }
+        .rtani-9  { height: 55px; animation: rtani-enter 0.4s 2.1s ease-out both, rtani-idle 2.5s 2.6s ease-in-out infinite; }
+        .rtani-10 { height: 45px; animation: rtani-enter 0.4s 2.3s ease-out both, rtani-idle 1.7s 2.8s ease-in-out infinite; }
+        .rtani-11 { height: 51px; animation: rtani-enter 0.4s 2.5s ease-out both, rtani-idle 2.2s 3.0s ease-in-out infinite; }
+        .rtani-12 { height: 43px; animation: rtani-enter 0.4s 2.7s ease-out both, rtani-idle 2.0s 3.2s ease-in-out infinite; }
+        .rtani-13 { height: 49px; animation: rtani-enter 0.4s 2.9s ease-out both, rtani-idle 2.3s 3.4s ease-in-out infinite; }
+        .rtani-14 { height: 52px; animation: rtani-enter 0.4s 3.1s ease-out both, rtani-idle 1.8s 3.6s ease-in-out infinite; }
+        .rtani-15 { height: 46px; animation: rtani-enter 0.4s 3.3s ease-out both, rtani-idle 2.1s 3.8s ease-in-out infinite; }
+        .rtani-16 { height: 54px; animation: rtani-enter 0.4s 3.5s ease-out both, rtani-idle 2.4s 4.0s ease-in-out infinite; }
+        .rtani-17 { height: 42px; animation: rtani-enter 0.4s 3.7s ease-out both, rtani-idle 1.9s 4.2s ease-in-out infinite; }
+        .rtani-18 { height: 50px; animation: rtani-enter 0.4s 3.9s ease-out both, rtani-idle 2.2s 4.4s ease-in-out infinite; }
+        .rtani-19 { height: 47px; animation: rtani-enter 0.4s 4.1s ease-out both, rtani-idle 2.0s 4.6s ease-in-out infinite; }
+        .rtani-20 { height: 53px; animation: rtani-enter 0.4s 4.3s ease-out both, rtani-idle 2.5s 4.8s ease-in-out infinite; }
+        .rtani-21 { height: 44px; animation: rtani-enter 0.4s 4.5s ease-out both, rtani-idle 1.8s 5.0s ease-in-out infinite; }
+        .rtani-22 { height: 51px; animation: rtani-enter 0.4s 4.7s ease-out both, rtani-idle 2.3s 5.2s ease-in-out infinite; }
+        .rtani-23 { height: 48px; animation: rtani-enter 0.4s 4.9s ease-out both, rtani-idle 2.1s 5.4s ease-in-out infinite; }
+        .rtani-24 { height: 55px; animation: rtani-enter 0.4s 5.1s ease-out both, rtani-idle 1.7s 5.6s ease-in-out infinite; }
+        .rtani-25 { height: 43px; animation: rtani-enter 0.4s 5.3s ease-out both, rtani-idle 2.4s 5.8s ease-in-out infinite; }
+        .rtani-26 { height: 50px; animation: rtani-enter 0.4s 5.5s ease-out both, rtani-idle 2.0s 6.0s ease-in-out infinite; }
+        .rtani-27 { height: 46px; animation: rtani-enter 0.4s 5.7s ease-out both, rtani-idle 2.2s 6.2s ease-in-out infinite; }
+        .rtani-28 { height: 52px; animation: rtani-enter 0.4s 5.9s ease-out both, rtani-idle 1.9s 6.4s ease-in-out infinite; }
+        .rtani-29 { height: 45px; animation: rtani-enter 0.4s 6.1s ease-out both, rtani-idle 2.5s 6.6s ease-in-out infinite; }
+        .rtani-30 { height: 49px; animation: rtani-enter 0.4s 6.3s ease-out both, rtani-idle 2.1s 6.8s ease-in-out infinite; }
+
+        @keyframes rtani-enter {
+            0% { transform: translateX(-80px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes rtani-idle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* (떠돌이 르탄이 제거됨) */
+
+        /* ===== 로그인 카드 ===== */
+        .login-wrap {
+            position: relative; z-index: 20;
+            display: flex; flex-direction: column; align-items: center;
+            gap: 1.2rem; width: 100%; max-width: 380px;
+            padding: 2rem;
+            margin-bottom: 100px;
+        }
+
+        .login-logo {
+            width: 300px; max-width: 90%;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 4px 0 rgba(0,0,0,0.5));
+            animation: logo-bob 3s ease-in-out infinite;
+        }
+        @keyframes logo-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+        .login-card {
+            width: 100%; background: #FFFDF5;
+            border: 4px solid #212529;
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.2);
+            padding: 1.5rem;
+        }
+
+        .login-title {
+            text-align: center;
+            font-family: 'NeoDunggeunmo', monospace;
+            font-size: 1.2rem; color: #212529;
+            margin-bottom: 1rem; padding-bottom: 0.75rem;
+            border-bottom: 4px solid #F4C430;
+        }
+
+        .login-sep {
+            display: flex; align-items: center; gap: 0.75rem;
+            margin: 1rem 0; color: #6C757D; font-size: 0.8rem;
+            font-family: 'NeoDunggeunmo', monospace;
+        }
+        .login-sep::before, .login-sep::after { content: ''; flex: 1; height: 2px; background: #D5DAE0; }
+
+        .social-btn {
+            display: flex; align-items: center; justify-content: center;
+            width: 48px; height: 48px;
+            border: 4px solid #212529; text-decoration: none;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }
+        .social-btn:hover { transform: translateY(-2px); box-shadow: 3px 5px 0px rgba(0,0,0,0.12); }
+        .social-btn:active { transform: translateY(2px); box-shadow: none; }
+        .social-kakao { background: #FEE500; }
+        .social-google { background: #FFF; }
+
+        .test-info {
+            padding: 0.6rem 0.8rem; background: #EDF2F4;
+            border: 2px dashed #D5DAE0;
+            font-size: 0.85rem; color: #6C757D;
+        }
+
+        /* ===== 말풍선 컨테이너 ===== */
+        .speech-bubbles {
+            position: absolute;
+            bottom: 88px; right: 15%; left: 0;
+            height: 120px;
+            z-index: 15;
+            pointer-events: none;
+        }
+        .speech-bubble {
+            position: absolute;
+            background: #FFFDF5;
+            border: 3px solid #212529;
+            padding: 4px 8px;
+            font-family: 'NeoDunggeunmo', monospace;
+            font-size: 0.7rem;
+            color: #212529;
+            white-space: nowrap;
+            opacity: 0;
+            transform: scale(0);
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute; bottom: -8px; left: 12px;
+            width: 0; height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #212529;
+        }
+        @keyframes bubble-pop {
+            0% { transform: scale(0); opacity: 0; }
+            10% { transform: scale(1.1); opacity: 1; }
+            15% { transform: scale(1); opacity: 1; }
+            80% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .wagon img { height: 140px; }
+            .rtani { height: 32px !important; }
+            .rtani-queue { gap: 2px; }
+            .speech-bubbles { display: none; }
+            .login-logo { width: 240px; }
+            .buildings { height: 180px; }
+            .temple { width: 100px; height: 120px; }
+            .tower { height: 140px; }
+        }
+
+        @media (max-width: 500px) {
+            .wagon img { height: 100px; }
+            .rtani { height: 24px !important; }
+            .login-wrap { margin-bottom: 60px; }
+        }
+    </style>
+</head>
+<body>
+<div class="login-page">
+    <!-- 태양 -->
+    <div class="sun"></div>
+
+    <!-- 구름 -->
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
+    <div class="cloud cloud-3"></div>
+    <div class="cloud cloud-4"></div>
+
+    <!-- 스파르타 건물 배경 -->
+    <div class="buildings">
+        <div class="wall"></div>
+        <div class="temple"></div>
+        <div class="tower"></div>
+        <div class="house house-1"></div>
+        <div class="house house-2"></div>
+        <div class="house house-3"></div>
+        <div class="flag flag-1"></div>
+        <div class="flag flag-2"></div>
+    </div>
+
+    <!-- 바닥 -->
+    <div class="road"></div>
+    <div class="ground"></div>
+
+    <!-- 황금마차 (우측) -->
+    <div class="wagon">
+        <div class="wagon-idle">
+            <img src="/images/truck.png" th:src="@{/images/truck.png}" alt="황금마차 트럭">
+        </div>
+    </div>
+
+    <!-- 줄 서있는 르탄이들 (30명) -->
+    <div class="rtani-queue">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-1">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-2">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-3">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-4">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-5">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-6">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-7">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-8">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-9">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-10">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-11">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-12">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-13">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-14">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-15">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-16">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-17">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-18">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-19">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-20">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-21">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-22">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-23">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-24">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-25">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-26">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-27">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-28">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-29">
+        <img src="/images/rtani.png" th:src="@{/images/rtani.png}" alt="르탄이" class="rtani rtani-30">
+    </div>
+
+    <!-- 말풍선 컨테이너 (JS로 랜덤 생성) -->
+    <div class="speech-bubbles" id="speech-bubbles"></div>
+
+    <!-- 로그인 카드 -->
+    <div class="login-wrap">
+        <img src="/images/sparta-logo.png" th:src="@{/images/sparta-logo.png}" alt="스파르타 황금마차" class="login-logo">
+
+        <div class="login-card">
+            <div class="login-title">⚔ 전사 로그인 ⚔</div>
+
+            <div id="error-message" class="alert alert-danger" style="margin-bottom: 1rem; display: none;">
+                <strong>⚠️ 로그인 실패</strong><br>
+                <span id="error-text">이메일 또는 비밀번호가 올바르지 않습니다.</span>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">이메일</label>
+                    <input type="email" id="email" class="form-input" placeholder="warrior@sparta.com" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">비밀번호</label>
+                    <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">로그인</button>
+            </form>
+
+            <div style="margin-top: 0.75rem;">
+                <a href="/pages/register" class="btn btn-outline" style="width: 100%;">신규 전사 등록</a>
+            </div>
+
+            <div class="login-sep">소셜 로그인</div>
+
+            <div style="display: flex; justify-content: center; gap: 1.2rem;">
+                <a href="/oauth2/authorization/kakao" title="카카오 로그인" class="social-btn social-kakao">
+                    <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#3C1E1E" d="M12 3C6.48 3 2 6.36 2 10.39c0 2.6 1.72 4.88 4.32 6.23l-1.1 4.07c-.09.34.3.61.6.41l4.74-3.16c.46.05.94.06 1.44.06 5.52 0 10-3.36 10-7.61S17.52 3 12 3z"/></svg>
+                </a>
+                <a href="/oauth2/authorization/google" title="Google 로그인" class="social-btn social-google">
+                    <svg width="22" height="22" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                </a>
+            </div>
+
+            <div class="test-info" style="margin-top: 1rem;">
+                <strong>테스트 계정:</strong> admin@test.com / admin
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 마차 도착 후 idle 애니메이션 시작
+    setTimeout(() => {
+        const wagon = document.querySelector('.wagon');
+        if (wagon) wagon.style.animation = 'none';
+    }, 1500);
+
+    // 말풍선 랜덤 생성
+    const speechTexts = [
+        '빨리 주문하고 싶다~!', '오늘 메뉴 뭐야?', '배고파 ㅠㅠ',
+        '나 먼저 왔어!', '치킨 남았나...?', '황금마차 최고!',
+        '줄이 왜 이렇게 길어', '오늘도 대박이네', '뒤에 서세요~',
+        '매진되면 어쩌지', '포인트 적립 해야지', '정기배달 신청해야겠다',
+        '스파르타 만세!', '여기 맛집이래!', '아 배고파...',
+        '오늘 신메뉴 나온대!', '할인 쿠폰 있다!', '단골 등급 올려야지',
+    ];
+    const bubblesContainer = document.getElementById('speech-bubbles');
+
+    function spawnBubble() {
+        const bubble = document.createElement('div');
+        bubble.className = 'speech-bubble';
+        bubble.textContent = speechTexts[Math.floor(Math.random() * speechTexts.length)];
+        bubble.style.right = (Math.random() * 70 + 5) + '%';
+        bubble.style.bottom = (Math.random() * 40 + 60) + 'px';
+        bubble.style.animation = 'bubble-pop 3.5s ease-out forwards';
+        bubblesContainer.appendChild(bubble);
+        setTimeout(() => bubble.remove(), 3600);
+    }
+    // 처음엔 약간 딜레이 후 시작, 이후 랜덤 간격
+    setTimeout(() => {
+        spawnBubble();
+        setInterval(() => {
+            if (Math.random() > 0.3) spawnBubble();
+            if (Math.random() > 0.6) setTimeout(spawnBubble, 300);
+        }, 1800);
+    }, 2000);
+
+    async function handleLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        document.getElementById('error-message').style.display = 'none';
+        try {
+            const result = await makeApiRequest('login', { body: { email, password }, returnHeaders: true });
+            if (!validateApiResponse('login', result.data, result.headers)) { showAlert('API 응답 형식이 올바르지않습니다.', 'error'); return; }
+            if (result.data.success) {
+                const authHeader = result.headers['authorization'];
+                if (authHeader && authHeader.startsWith('Bearer ')) { saveToken(authHeader.substring(7)); window.location.href = '/'; }
+                else { document.getElementById('error-text').textContent = '토큰을 받을 수 없습니다.'; }
+            }
+        } catch (error) {
+            showAlert(error.message.includes('비밀번호') ? '이메일 또는 비밀번호가 일치하지 않습니다.' : '로그인 중 오류가 발생했습니다.', 'error');
+        }
+    }
+    if (typeof getToken === 'function' && getToken()) window.location.href = '/';
+</script>
+</body>
+</html>

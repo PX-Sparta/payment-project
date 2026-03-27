@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
-    <title>상점 - Commerce Demo</title>
+    <title>상점 - 스파르타 황금마차</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
     <script th:src="@{/js/cookie-util.js}"></script>
@@ -18,15 +18,15 @@
 <body>
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="/" class="navbar-brand">🏪 CommerceHub</a>
+            <a href="/" class="navbar-brand"><img th:src="@{/images/sparta-logo.png}" src="/images/sparta-logo.png" alt="스파르타 황금마차" style="height: 96px;"></a>
             <ul class="navbar-nav">
-                <li><a href="/" class="nav-link">홈</a></li>
-                <li><a href="/pages/shop" class="nav-link active">상점</a></li>
-                <li><a href="/pages/orders" class="nav-link">주문</a></li>
-                <li><a href="/pages/points" class="nav-link">포인트</a></li>
-                <li><a href="/pages/plans" class="nav-link">플랜</a></li>
-                <li><a href="/pages/subscribe" class="nav-link">구독 신청</a></li>
-                <li><a href="/pages/subscriptions" class="nav-link">구독 관리</a></li>
+                <li><a href="/" class="nav-link">마차 입구</a></li>
+                <li><a href="/pages/shop" class="nav-link active">메뉴판</a></li>
+                <li><a href="/pages/orders" class="nav-link">주문서</a></li>
+                <li><a href="/pages/points" class="nav-link">도장카드</a></li>
+                <li><a href="/pages/plans" class="nav-link">단골 등급</a></li>
+                <li><a href="/pages/subscribe" class="nav-link">정기 배달</a></li>
+                <li><a href="/pages/subscriptions" class="nav-link">정기배달 관리</a></li>
             </ul>
             <div class="navbar-actions">
                 <div class="config-badge-container"></div>
@@ -37,7 +37,7 @@
 
     <div class="main-container">
         <div class="content-area">
-            <h1 style="font-size: 2rem; margin-bottom: 2rem;">🛒 Product Shop</h1>
+            <h1 style="font-size: 2rem; margin-bottom: 2rem;">🛒 메뉴판</h1>
 
             <!-- API 구현 상태 안내 -->
             <div class="alert alert-warning" style="margin-bottom: 1.5rem;">
@@ -180,7 +180,8 @@
                             <button class="quantity-btn" onclick="updateQuantity('${product.id}', -1)"
                                 ${product.stock === 0 ? 'disabled' : ''}>-</button>
                             <input type="number" class="quantity-input" id="qty-${product.id}"
-                                value="0" min="0" max="${product.stock}" readonly>
+                                value="0" min="0" max="${product.stock}"
+                                onchange="handleQuantityInput('${product.id}', this.value)">
                             <button class="quantity-btn" onclick="updateQuantity('${product.id}', 1)"
                                 ${product.stock === 0 ? 'disabled' : ''}>+</button>
                         </div>
@@ -189,8 +190,26 @@
             }).join('');
         }
 
+        function handleQuantityInput(productId, value) {
+            const product = products.find(p => String(p.id) === String(productId));
+            if (!product) return;
+
+            const input = document.getElementById(`qty-${productId}`);
+            let qty = parseInt(value) || 0;
+
+            if (qty < 0) qty = 0;
+            if (qty > product.stock) {
+                showNotification(`⚠️ 재고가 ${product.stock}개만 남았습니다`, 'warning');
+                qty = product.stock;
+            }
+
+            input.value = qty;
+            cart[productId] = qty;
+            updateCartSummary();
+        }
+
         function updateQuantity(productId, delta) {
-            const product = products.find(p => p.id === productId);
+            const product = products.find(p => String(p.id) === String(productId));
             if (!product) return;
 
             const input = document.getElementById(`qty-${productId}`);
@@ -219,7 +238,7 @@
             Object.keys(cart).forEach(productId => {
                 const qty = cart[productId];
                 if (qty > 0) {
-                    const product = products.find(p => p.id === productId);
+                    const product = products.find(p => String(p.id) === String(productId));
                     const subtotal = product.price * qty;
                     total += subtotal;
                     html += `
@@ -310,7 +329,8 @@
 
             try {
                 const result = await makeApiRequest('create-order', {
-                    body: orderData
+                    body: orderData,
+                    pathParams: { customerId: currentUser.customerUid }
                 });
 
                 // YML 스키마 기반 자동 검증

@@ -28,28 +28,20 @@ function checkAuthentication() {
 }
 
 /**
- * 네비게이션 바에 사용자 정보 표시
+ * 네비게이션 바에 사용자 정보 표시 (수정됨)
  */
 function displayUserInfo() {
-    // JWT 토큰에서 이메일 추출
     const email = typeof getEmailFromToken === 'function' ? getEmailFromToken() : null;
-    const navbarActions = document.querySelector('.navbar-actions');
+    const userInfoContainer = document.getElementById('user-info-container');
+    const userEmailDisplay = document.getElementById('user-email-display');
 
-    if (email && navbarActions) {
-        // 사용자 정보 요소 추가
-        const userInfo = document.createElement('div');
-        userInfo.style.cssText = 'display: flex; align-items: center; gap: 1rem; margin-right: 1rem;';
-        userInfo.innerHTML = `
-            <span style="color: var(--text-secondary); font-size: 0.9rem;">
-                👤 ${email}
-            </span>
-            <button onclick="handleLogout()" class="btn btn-outline" style="padding: 0.4rem 1rem; font-size: 0.875rem;">
-                로그아웃
-            </button>
-        `;
-
-        // navbar-actions 맨 앞에 삽입
-        navbarActions.insertBefore(userInfo, navbarActions.firstChild);
+    if (email && userInfoContainer && userEmailDisplay) {
+        // 이메일을 세팅하고 영역을 보이게 만듦
+        userEmailDisplay.innerHTML = `👤 ${email}`;
+        userInfoContainer.style.display = 'flex';
+    } else if (userInfoContainer) {
+        // 로그인이 안 되어 있으면 숨김
+        userInfoContainer.style.display = 'none';
     }
 }
 
@@ -64,7 +56,26 @@ function handleLogout() {
     window.location.href = '/pages/login';
 }
 
-// 페이지 로드 시 인증 체크
+/**
+ * OAuth2 소셜 로그인 콜백 처리
+ * 성공 시 /?token={JWT} 형태로 리다이렉트되므로, URL에서 토큰을 추출하여 쿠키에 저장
+ */
+function handleOAuth2Callback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (token) {
+        // 토큰 저장
+        if (typeof saveToken === 'function') saveToken(token);
+
+        // URL에서 token 파라미터 제거 (히스토리 교체)
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+    }
+}
+
+// 페이지 로드 시 OAuth2 콜백 처리 후 인증 체크
 document.addEventListener('DOMContentLoaded', function() {
+    handleOAuth2Callback();
     checkAuthentication();
 });
