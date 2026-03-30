@@ -294,7 +294,7 @@
                     issueName: `${plan.name} Plan Subscription`,
                     billingKeyMethod: 'EASY_PAY',
                     customer: {
-                        customerId: String(currentUser.customerUid),
+                        customerId: `CUST-${currentUser.customerUid}`,
                         fullName: currentUser.name,
                         phoneNumber: currentUser.phoneNumber || '01012345678',  // KG 이니시스 필수
                         email: currentUser.email
